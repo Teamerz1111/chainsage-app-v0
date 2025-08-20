@@ -1,0 +1,284 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  /* Updated color tokens for cybersecurity theme with neon accents */
+  --background: oklch(0.039 0 0); /* #0A0A0A - dark background */
+  --foreground: oklch(0.985 0 0); /* #FFFFFF - white text */
+  --card: oklch(0.102 0 0); /* #1A1A1A - card background */
+  --card-foreground: oklch(0.985 0 0); /* #FFFFFF - card text */
+  --popover: oklch(0.102 0 0); /* #1A1A1A - popover background */
+  --popover-foreground: oklch(0.985 0 0); /* #FFFFFF - popover text */
+  --primary: oklch(0.8 0.2 166); /* #00FFB3 - neon cyan */
+  --primary-foreground: oklch(0.039 0 0); /* #0A0A0A - dark text on cyan */
+  --secondary: oklch(0.8 0.25 142); /* #00FF00 - neon green */
+  --secondary-foreground: oklch(0.039 0 0); /* #0A0A0A - dark text on green */
+  --muted: oklch(0.318 0 0); /* #4B5563 - muted gray */
+  --muted-foreground: oklch(0.985 0 0); /* #FFFFFF - white on muted */
+  --accent: oklch(0.8 0.2 166); /* #00FFB3 - neon cyan accent */
+  --accent-foreground: oklch(0.039 0 0); /* #0A0A0A - dark text on accent */
+  --destructive: oklch(0.577 0.245 27.325); /* Red for destructive actions */
+  --destructive-foreground: oklch(0.985 0 0); /* White text on red */
+  --border: oklch(0.22 0 0); /* #374151 - border color */
+  --input: oklch(0.102 0 0); /* #1A1A1A - input background */
+  --ring: oklch(0.8 0.2 166 / 0.5); /* Neon cyan with opacity for focus rings */
+  --chart-1: oklch(0.8 0.2 166); /* #00FFB3 - neon cyan */
+  --chart-2: oklch(0.8 0.25 142); /* #00FF00 - neon green */
+  --chart-3: oklch(0.985 0 0); /* #FFFFFF - white */
+  --chart-4: oklch(0.318 0 0); /* #4B5563 - muted gray */
+  --chart-5: oklch(0.577 0.245 27.325); /* Red */
+  --radius: 0.5rem;
+  --sidebar: oklch(0.102 0 0); /* #1A1A1A - sidebar background */
+  --sidebar-foreground: oklch(0.985 0 0); /* #FFFFFF - sidebar text */
+  --sidebar-primary: oklch(0.8 0.2 166); /* #00FFB3 - sidebar primary */
+  --sidebar-primary-foreground: oklch(0.039 0 0); /* Dark text on primary */
+  --sidebar-accent: oklch(0.8 0.25 142); /* #00FF00 - sidebar accent */
+  --sidebar-accent-foreground: oklch(0.039 0 0); /* Dark text on accent */
+  --sidebar-border: oklch(0.22 0 0); /* #374151 - sidebar border */
+  --sidebar-ring: oklch(0.8 0.2 166 / 0.5); /* Neon cyan ring */
+}
+
+.dark {
+  /* Dark mode uses same colors since we're defaulting to dark theme */
+  --background: oklch(0.039 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.102 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.102 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.8 0.2 166);
+  --primary-foreground: oklch(0.039 0 0);
+  --secondary: oklch(0.8 0.25 142);
+  --secondary-foreground: oklch(0.039 0 0);
+  --muted: oklch(0.318 0 0);
+  --muted-foreground: oklch(0.985 0 0);
+  --accent: oklch(0.8 0.2 166);
+  --accent-foreground: oklch(0.039 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.985 0 0);
+  --border: oklch(0.22 0 0);
+  --input: oklch(0.102 0 0);
+  --ring: oklch(0.8 0.2 166 / 0.5);
+  --chart-1: oklch(0.8 0.2 166);
+  --chart-2: oklch(0.8 0.25 142);
+  --chart-3: oklch(0.985 0 0);
+  --chart-4: oklch(0.318 0 0);
+  --chart-5: oklch(0.577 0.245 27.325);
+  --sidebar: oklch(0.102 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.8 0.2 166);
+  --sidebar-primary-foreground: oklch(0.039 0 0);
+  --sidebar-accent: oklch(0.8 0.25 142);
+  --sidebar-accent-foreground: oklch(0.039 0 0);
+  --sidebar-border: oklch(0.22 0 0);
+  --sidebar-ring: oklch(0.8 0.2 166 / 0.5);
+}
+
+/* Light mode for theme toggle - inverted colors */
+.light {
+  --background: oklch(0.985 0 0); /* White background */
+  --foreground: oklch(0.039 0 0); /* Dark text */
+  --card: oklch(0.97 0 0); /* Light card background */
+  --card-foreground: oklch(0.039 0 0); /* Dark card text */
+  --popover: oklch(0.97 0 0);
+  --popover-foreground: oklch(0.039 0 0);
+  --primary: oklch(0.6 0.2 166); /* Darker cyan for light mode */
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.6 0.25 142); /* Darker green for light mode */
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.922 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.6 0.2 166);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.985 0 0);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.6 0.2 166 / 0.5);
+  --chart-1: oklch(0.6 0.2 166);
+  --chart-2: oklch(0.6 0.25 142);
+  --chart-3: oklch(0.039 0 0);
+  --chart-4: oklch(0.556 0 0);
+  --chart-5: oklch(0.577 0.245 27.325);
+  --sidebar: oklch(0.97 0 0);
+  --sidebar-foreground: oklch(0.039 0 0);
+  --sidebar-primary: oklch(0.6 0.2 166);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.6 0.25 142);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.6 0.2 166 / 0.5);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  /* Added custom fonts for Inter and Space Grotesk */
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Space Grotesk", ui-serif, Georgia, serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground font-sans;
+  }
+  /* Added matrix-like background pattern for cybersecurity aesthetic */
+  .matrix-bg {
+    background-image: linear-gradient(90deg, rgba(0, 255, 179, 0.03) 1px, transparent 1px),
+      linear-gradient(rgba(0, 255, 179, 0.03) 1px, transparent 1px);
+    background-size: 20px 20px;
+    animation: matrix-scroll 20s linear infinite;
+  }
+
+  @keyframes matrix-scroll {
+    0% {
+      background-position: 0 0;
+    }
+    100% {
+      background-position: 20px 20px;
+    }
+  }
+
+  /* Glow effects for neon elements */
+  .neon-glow {
+    box-shadow: 0 0 5px currentColor, 0 0 10px currentColor, 0 0 15px currentColor;
+  }
+
+  .neon-text {
+    text-shadow: 0 0 5px currentColor, 0 0 10px currentColor;
+  }
+
+  /* Added enhanced animations for hero section */
+  .matrix-rain {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  .matrix-column {
+    position: absolute;
+    top: -100%;
+    width: 20px;
+    height: 200%;
+    display: flex;
+    flex-direction: column;
+    animation: matrix-fall linear infinite;
+  }
+
+  .matrix-char {
+    display: block;
+    opacity: 0;
+    animation: matrix-char-fade 0.5s ease-in-out infinite alternate;
+  }
+
+  @keyframes matrix-fall {
+    0% {
+      transform: translateY(-100%);
+    }
+    100% {
+      transform: translateY(100vh);
+    }
+  }
+
+  @keyframes matrix-char-fade {
+    0% {
+      opacity: 0;
+    }
+    100% {
+      opacity: 1;
+    }
+  }
+
+  @keyframes fade-in-up {
+    0% {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes spin-slow {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+
+  @keyframes bounce-slow {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
+  }
+
+  .animate-fade-in-up {
+    animation: fade-in-up 0.8s ease-out forwards;
+  }
+
+  .animate-spin-slow {
+    animation: spin-slow 20s linear infinite;
+  }
+
+  .animate-bounce-slow {
+    animation: bounce-slow 3s ease-in-out infinite;
+  }
+
+  .delay-300 {
+    animation-delay: 300ms;
+  }
+
+  .delay-500 {
+    animation-delay: 500ms;
+  }
+}
