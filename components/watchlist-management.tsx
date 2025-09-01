@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Plus, Pin, Trash2, Activity, AlertTriangle, CheckCircle, Clock, ExternalLink } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { apiService } from "@/lib/api"
 
 interface WatchlistItem {
   id: string
@@ -103,28 +104,45 @@ export function WatchlistManagement() {
     localStorage.setItem("chainsage-watchlist", JSON.stringify(watchlist))
   }, [watchlist])
 
-  const addToWatchlist = () => {
-    if (!newItem.label || !newItem.address) return
+  const addToWatchlist = async () => {
+    if (!newItem.label || !newItem.address || !isValidAddress(newItem.address)) return
 
-    const newWatchlistItem: WatchlistItem = {
-      id: `w_${Date.now()}`,
-      label: newItem.label,
-      address: newItem.address,
-      riskScore: Math.floor(Math.random() * 100),
-      lastEvent: "just added",
-      chain: newItem.chain,
-      type: newItem.type,
-      balance: newItem.type === "wallet" ? Math.floor(Math.random() * 1000000) : undefined,
-      transactionCount: Math.floor(Math.random() * 5000),
-      addedAt: new Date().toISOString().split("T")[0],
+    try {
+      // Start monitoring the wallet in the backend
+      await apiService.startWalletMonitoring(newItem.address, 1000)
+
+      const newWatchlistItem: WatchlistItem = {
+        id: `w_${Date.now()}`,
+        label: newItem.label,
+        address: newItem.address,
+        riskScore: Math.floor(Math.random() * 100),
+        lastEvent: "just added",
+        chain: newItem.chain,
+        type: newItem.type,
+        balance: newItem.type === "wallet" ? Math.floor(Math.random() * 1000000) : undefined,
+        transactionCount: Math.floor(Math.random() * 5000),
+        addedAt: new Date().toISOString().split("T")[0],
+      }
+
+      setWatchlist((prev) => [newWatchlistItem, ...prev])
+      setNewItem({ label: "", address: "", type: "wallet", chain: "ethereum" })
+      setIsAddModalOpen(false)
+    } catch (error) {
+      console.error('Failed to add to watchlist:', error)
     }
-
-    setWatchlist((prev) => [newWatchlistItem, ...prev])
-    setNewItem({ label: "", address: "", type: "wallet", chain: "ethereum" })
-    setIsAddModalOpen(false)
   }
 
-  const removeFromWatchlist = (id: string) => {
+  const removeFromWatchlist = async (id: string) => {
+    const item = watchlist.find(w => w.id === id)
+    if (item) {
+      try {
+        // Stop monitoring in the backend
+        await apiService.stopWalletMonitoring(item.address)
+      } catch (error) {
+        console.error('Failed to stop monitoring:', error)
+      }
+    }
+    
     setWatchlist((prev) => prev.filter((item) => item.id !== id))
   }
 

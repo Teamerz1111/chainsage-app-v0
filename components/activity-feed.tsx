@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ArrowUpRight, Repeat, ImageIcon, Droplets, ExternalLink, Filter } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { apiService } from "@/lib/api"
+import { wsService } from "@/lib/websocket"
 
 type ActivityType = "transaction" | "nft" | "liquidity"
 
@@ -100,29 +102,83 @@ const filterOptions = [
 ]
 
 export function ActivityFeed() {
-  const [activities, setActivities] = useState<ActivityItem[]>(mockActivityData)
+  const [activities, setActivities] = useState<ActivityItem[]>([])
   const [selectedFilter, setSelectedFilter] = useState<string>("all")
   const [expandedItem, setExpandedItem] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  // Simulate live updates
+  // Load initial data and set up polling
   useEffect(() => {
-    const interval = setInterval(() => {
-      // Add a new random activity every 10 seconds
-      const newActivity: ActivityItem = {
-        id: `activity_${Date.now()}`,
-        type: ["transaction", "nft", "liquidity"][Math.floor(Math.random() * 3)] as ActivityType,
-        hash: `0x${Math.random().toString(16).substring(2, 42)}`,
-        from: `0x${Math.random().toString(16).substring(2, 42)}`,
-        to: `0x${Math.random().toString(16).substring(2, 42)}`,
-        valueUsd: Math.random() * 50000,
-        time: "just now",
-        chain: ["ethereum", "polygon", "arbitrum"][Math.floor(Math.random() * 3)],
+    const loadActivities = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+
+        // Get recent activity data from 0G blockchain
+        const result = await apiService.retrieve0GData({
+          type: 'ai_classification',
+          limit: 20,
+          page: 1
+        })
+
+        if (result.error) {
+          setError(result.error)
+          // Fallback to mock data on error
+          setActivities(mockActivityData)
+        } else if (result.data?.logs) {
+          // Transform backend data to frontend format
+          const transformedActivities: ActivityItem[] = result.data.logs.map((log: any, index: number) => ({
+            id: log.transactionHash || `activity_${index}`,
+            type: "transaction" as ActivityType,
+            hash: log.transactionHash,
+            from: log.originalTransaction?.from,
+            to: log.originalTransaction?.to,
+            valueUsd: log.originalTransaction?.value ? parseFloat(log.originalTransaction.value) / 1e18 * 2000 : Math.random() * 10000, // Rough ETH to USD conversion
+            time: log.timestamp ? new Date(log.timestamp).toLocaleString() : "Unknown",
+            chain: "ethereum", // Default to ethereum for now
+          }))
+          setActivities(transformedActivities)
+        } else {
+          // No data available, use mock data
+          setActivities(mockActivityData)
+        }
+      } catch (err) {
+        console.error('Failed to load activities:', err)
+        setError('Failed to load activities')
+        setActivities(mockActivityData)
+      } finally {
+        setLoading(false)
       }
+    }
 
-      setActivities((prev) => [newActivity, ...prev.slice(0, 19)]) // Keep only 20 items
-    }, 10000)
+    loadActivities()
 
-    return () => clearInterval(interval)
+    // Set up WebSocket connection for real-time updates
+    wsService.connect()
+    const unsubscribe = wsService.subscribe('unusual_activity_detected', (message) => {
+      // Add new activity to the top of the list
+      const newActivity: ActivityItem = {
+        id: `ws_${Date.now()}`,
+        type: "transaction",
+        hash: message.data.walletData?.recentTransactions?.[0]?.hash || `0x${Date.now().toString(16)}`,
+        from: message.data.walletAddress,
+        to: message.data.walletData?.recentTransactions?.[0]?.to || "Unknown",
+        valueUsd: Math.random() * 10000,
+        time: "just now",
+        chain: "ethereum",
+      }
+      
+      setActivities(prev => [newActivity, ...prev.slice(0, 19)])
+    })
+
+    // Poll for updates every 30 seconds as backup
+    const interval = setInterval(loadActivities, 30000)
+    
+    return () => {
+      clearInterval(interval)
+      unsubscribe()
+    }
   }, [])
 
   const filteredActivities = activities.filter((activity) =>
@@ -208,6 +264,17 @@ export function ActivityFeed() {
             </div>
           </CardHeader>
           <CardContent className="p-0">
+            {loading ? (
+              <div className="p-8 text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4" />
+                <p className="text-muted-foreground">Loading activities...</p>
+              </div>
+            ) : error ? (
+              <div className="p-8 text-center">
+                <p className="text-destructive mb-2">Error: {error}</p>
+                <p className="text-muted-foreground text-sm">Showing demo data</p>
+              </div>
+            ) : null}
             <div className="space-y-1">
               {filteredActivities.map((activity, index) => (
                 <div

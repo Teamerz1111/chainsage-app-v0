@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { AlertTriangle, Shield, Eye, EyeOff, Clock, TrendingDown, Zap, Users } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { apiService } from "@/lib/api"
+import { wsService } from "@/lib/websocket"
 
 type RiskSeverity = "Low" | "Medium" | "High" | "Critical"
 
@@ -120,36 +122,93 @@ const tagIcons: Record<string, any> = {
 }
 
 export function RiskFeed() {
-  const [alerts, setAlerts] = useState<RiskAlert[]>(mockRiskData)
+  const [alerts, setAlerts] = useState<RiskAlert[]>([])
   const [filter, setFilter] = useState<RiskSeverity | "All">("All")
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  // Simulate new risk alerts
+  // Load initial alerts and set up polling
   useEffect(() => {
-    const interval = setInterval(() => {
-      const severities: RiskSeverity[] = ["Low", "Medium", "High", "Critical"]
-      const titles = [
-        "Unusual Transaction Pattern",
-        "Smart Contract Risk",
-        "Liquidity Pool Manipulation",
-        "Suspicious Wallet Activity",
-        "Token Price Anomaly",
-      ]
-      const chains = ["ethereum", "polygon", "bsc", "arbitrum"]
+    const loadAlerts = async () => {
+      try {
+        setLoading(true)
+        setError(null)
 
-      const newAlert: RiskAlert = {
-        id: `risk_${Date.now()}`,
-        severity: severities[Math.floor(Math.random() * severities.length)],
-        title: titles[Math.floor(Math.random() * titles.length)],
-        detail: "Automated risk detection system flagged this activity for review",
-        tags: ["Automated", "Detection"],
-        time: "just now",
-        chain: chains[Math.floor(Math.random() * chains.length)],
+        // Get alerts from backend
+        const result = await apiService.getAlerts(20)
+
+        if (result.error) {
+          setError(result.error)
+          // Fallback to mock data on error
+          setAlerts(mockRiskData)
+        } else if (result.data?.alerts) {
+          // Transform backend alert data to frontend format
+          const transformedAlerts: RiskAlert[] = result.data.alerts.map((alert: any, index: number) => {
+            const classification = alert.classification
+            const riskLevel = classification?.riskLevel || 'low'
+            
+            // Map backend risk levels to frontend severity
+            const severityMap: Record<string, RiskSeverity> = {
+              'low': 'Low',
+              'medium': 'Medium', 
+              'high': 'High',
+              'critical': 'Critical'
+            }
+
+            return {
+              id: alert.transactionHash || `risk_${index}`,
+              severity: severityMap[riskLevel] || 'Low',
+              title: classification?.isUnusual ? 'Unusual Activity Detected' : 'Transaction Classified',
+              detail: classification?.reason || 'Transaction analyzed by AI classification system',
+              tags: classification?.anomalies || ['AI Classified'],
+              time: alert.timestamp ? new Date(alert.timestamp).toLocaleString() : 'Unknown',
+              chain: 'ethereum', // Default to ethereum for now
+            }
+          })
+          setAlerts(transformedAlerts)
+        } else {
+          // No data available, use mock data
+          setAlerts(mockRiskData)
+        }
+      } catch (err) {
+        console.error('Failed to load alerts:', err)
+        setError('Failed to load alerts')
+        setAlerts(mockRiskData)
+      } finally {
+        setLoading(false)
       }
+    }
 
-      setAlerts((prev) => [newAlert, ...prev.slice(0, 19)]) // Keep only 20 alerts
-    }, 15000) // New alert every 15 seconds
+    loadAlerts()
 
-    return () => clearInterval(interval)
+    // Set up WebSocket connection for real-time alerts
+    wsService.connect()
+    const unsubscribe = wsService.subscribe('unusual_activity_detected', (message) => {
+      const analysis = message.data.analysis
+      if (analysis && analysis.isUnusual) {
+        const newAlert: RiskAlert = {
+          id: `ws_${Date.now()}`,
+          severity: analysis.riskLevel === 'critical' ? 'Critical' :
+                   analysis.riskLevel === 'high' ? 'High' :
+                   analysis.riskLevel === 'medium' ? 'Medium' : 'Low',
+          title: 'Unusual Wallet Activity Detected',
+          detail: `Wallet ${message.data.walletAddress} shows unusual patterns: ${analysis.anomalies?.join(', ') || 'Multiple anomalies detected'}`,
+          tags: analysis.anomalies || ['Real-time Alert'],
+          time: 'just now',
+          chain: 'ethereum',
+        }
+        
+        setAlerts(prev => [newAlert, ...prev.slice(0, 19)])
+      }
+    })
+
+    // Poll for updates every 45 seconds as backup
+    const interval = setInterval(loadAlerts, 45000)
+    
+    return () => {
+      clearInterval(interval)
+      unsubscribe()
+    }
   }, [])
 
   const filteredAlerts = alerts.filter((alert) => (filter === "All" ? true : alert.severity === filter))
@@ -210,6 +269,17 @@ export function RiskFeed() {
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
+            {loading ? (
+              <div className="p-8 text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4" />
+                <p className="text-muted-foreground">Loading alerts...</p>
+              </div>
+            ) : error ? (
+              <div className="p-8 text-center">
+                <p className="text-destructive mb-2">Error: {error}</p>
+                <p className="text-muted-foreground text-sm">Showing demo data</p>
+              </div>
+            ) : null}
             {filteredAlerts.map((alert, index) => {
               const config = severityConfig[alert.severity]
               const SeverityIcon = config.icon

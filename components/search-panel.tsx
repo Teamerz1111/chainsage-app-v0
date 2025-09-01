@@ -24,6 +24,7 @@ import {
   Droplets,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { apiService } from "@/lib/api"
 
 interface SearchResult {
   address: string
@@ -165,28 +166,59 @@ export function SearchPanel() {
     setIsSearching(true)
     setError("")
 
-    // Simulate API call
-    setTimeout(() => {
-      const result = mockSearchResults[searchQuery.toLowerCase()]
-      if (result) {
-        setSearchResult(result)
-      } else {
-        // Generate mock result for unknown addresses
+    try {
+      // Try to get real wallet analysis first
+      const analysisResult = await apiService.analyzeWallet(searchQuery)
+      
+      if (analysisResult.data && !analysisResult.error) {
+        const analysis = analysisResult.data.analysis
+        
         setSearchResult({
           address: searchQuery,
           type: "wallet",
-          balance: Math.floor(Math.random() * 100000),
-          transactionCount: Math.floor(Math.random() * 1000),
-          labels: ["Unknown"],
-          riskScore: Math.floor(Math.random() * 100),
+          balance: parseFloat(analysis.dailyVolume || '0') / 1e18 * 2000, // Rough conversion
+          transactionCount: analysis.dailyTxCount || 0,
+          labels: analysis.isUnusual ? ["Unusual Activity", "AI Flagged"] : ["Normal Activity"],
+          riskScore: analysis.riskLevel === 'critical' ? 90 : 
+                    analysis.riskLevel === 'high' ? 70 :
+                    analysis.riskLevel === 'medium' ? 40 : 20,
           chain: "ethereum",
-          firstSeen: "2023-01-01",
-          lastActivity: "Unknown",
-          recentEvents: [],
+          firstSeen: "Unknown",
+          lastActivity: "Recent",
+          recentEvents: [], // Could be populated from additional API calls
         })
+      } else {
+        // Fallback to mock data or show not found
+        const mockResult = mockSearchResults[searchQuery.toLowerCase()]
+        if (mockResult) {
+          setSearchResult(mockResult)
+        } else {
+          setSearchResult({
+            address: searchQuery,
+            type: "wallet",
+            balance: 0,
+            transactionCount: 0,
+            labels: ["Unknown"],
+            riskScore: 0,
+            chain: "ethereum",
+            firstSeen: "Unknown",
+            lastActivity: "Unknown",
+            recentEvents: [],
+          })
+        }
       }
+    } catch (err) {
+      console.error('Search error:', err)
+      setError("Search failed, showing cached results if available")
+      
+      // Fallback to mock data
+      const mockResult = mockSearchResults[searchQuery.toLowerCase()]
+      if (mockResult) {
+        setSearchResult(mockResult)
+      }
+    } finally {
       setIsSearching(false)
-    }, 1000)
+    }
   }
 
   const handleKeyPress = (e: React.KeyboardEvent) => {

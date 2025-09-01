@@ -21,7 +21,8 @@ import {
 } from "lucide-react"
 import { WatchlistManagement } from "@/components/watchlist-management"
 import Link from "next/link"
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { apiService } from "@/lib/api"
 
 export function AdminDashboard() {
   const { address } = useWallet()
