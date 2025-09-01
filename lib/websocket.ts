@@ -53,7 +53,9 @@ class WebSocketService {
     const typeCallbacks = this.callbacks.get(message.type) || []
     const allCallbacks = this.callbacks.get('*') || []
 
-    [...typeCallbacks, ...allCallbacks].forEach(callback => {
+    const allCallbacksToRun = typeCallbacks.concat(allCallbacks)
+    
+    allCallbacksToRun.forEach(callback => {
       try {
         callback(message)
       } catch (error) {
