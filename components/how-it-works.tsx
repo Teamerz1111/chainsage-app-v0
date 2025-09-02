@@ -84,7 +84,7 @@ export function HowItWorks() {
         <div className="text-center mb-16">
           <h2 className="text-4xl font-bold font-serif text-primary neon-text mb-4">How It Works</h2>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-            ChainSage aggregates data from multiple blockchain APIs and applies advanced risk detection algorithms to
+            0g-Sygna aggregates data from multiple blockchain APIs and applies advanced risk detection algorithms to
             provide real-time on-chain intelligence
           </p>
         </div>

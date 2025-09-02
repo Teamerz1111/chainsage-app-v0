@@ -239,7 +239,7 @@ export function WatchlistManagement() {
                   Add to Watchlist
                 </Button>
               </DialogTrigger>
-              <DialogContent className="bg-cyber-dark border-cyber-cyan/20">
+              <DialogContent className="bg-slate-900 border-cyber-cyan/20">
                 <DialogHeader>
                   <DialogTitle className="text-white">Add to Watchlist</DialogTitle>
                 </DialogHeader>

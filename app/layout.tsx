@@ -18,7 +18,7 @@ const spaceGrotesk = Space_Grotesk({
 })
 
 export const metadata: Metadata = {
-  title: "ChainSage - Real-Time On-Chain Intelligence",
+  title: "0g-Sygna - Real-Time On-Chain Intelligence",
   description:
     "Monitor blockchain activity with real-time transaction feeds, risk alerts, and comprehensive watchlist management.",
   generator: "v0.app",

@@ -1,3 +1,5 @@
+import { RiskMetadata, RiskFactors } from './risk-scoring'
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://chainsage-backend.onrender.com'
 
 export interface ApiResponse<T> {
@@ -165,6 +167,47 @@ class ApiService {
 
   async check0GHealth() {
     return this.makeRequest('/api/0g/health')
+  }
+
+  // Risk Scoring & Metadata endpoints
+  async calculateRiskScore(transactionData: TransactionData, factors: RiskFactors) {
+    return this.makeRequest<RiskMetadata>('/api/risk/calculate', {
+      method: 'POST',
+      body: JSON.stringify({ transactionData, factors }),
+    })
+  }
+
+  async getRiskMetadata(id: string) {
+    return this.makeRequest<RiskMetadata>(`/api/risk/metadata/${id}`)
+  }
+
+  async storeRiskMetadata(metadata: RiskMetadata) {
+    return this.makeRequest('/api/0g/store-risk-metadata', {
+      method: 'POST',
+      body: JSON.stringify({ 
+        data: metadata, 
+        type: 'risk_metadata',
+        id: metadata.id 
+      }),
+    })
+  }
+
+  async retrieveRiskMetadata(filters: {
+    severity?: string
+    startTime?: number
+    endTime?: number
+    limit?: number
+    page?: number
+  } = {}) {
+    const params = new URLSearchParams()
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined) params.append(key, value.toString())
+    })
+    return this.makeRequest<{ metadata: RiskMetadata[], total: number }>(`/api/0g/retrieve-risk-metadata?${params}`)
+  }
+
+  async getAuditTrail(riskId: string) {
+    return this.makeRequest(`/api/risk/audit-trail/${riskId}`)
   }
 }
 
