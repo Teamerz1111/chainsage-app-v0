@@ -2,5 +2,5 @@
 
 ```bash
 vercel project
-vercel link --yes --project chainsage
+vercel link --yes --project chainsage-app
 ```
