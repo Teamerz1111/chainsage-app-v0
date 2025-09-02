@@ -47,7 +47,7 @@ export function Footer() {
           {/* Brand Section */}
           <div className="lg:col-span-1">
             <div className="flex items-center space-x-2 mb-4">
-              <div className="text-2xl font-bold font-serif text-primary neon-text">🔗 ChainSage</div>
+              <div className="text-2xl font-bold font-serif text-primary neon-text">🔗 0g-Sygna</div>
             </div>
             <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
               Real-time on-chain intelligence platform for blockchain monitoring, risk detection, and security analysis.
@@ -98,7 +98,7 @@ export function Footer() {
                 <h4 className="font-semibold text-foreground mb-2">Important Disclaimer</h4>
                 <div className="text-sm text-muted-foreground space-y-2 leading-relaxed">
                   <p>
-                    ChainSage provides blockchain data analysis for informational purposes only. All data is sourced
+                    0g-Sygna provides blockchain data analysis for informational purposes only. All data is sourced
                     from third-party APIs and may experience delays or inaccuracies.
                   </p>
                   <p>
@@ -145,7 +145,7 @@ export function Footer() {
         <div className="pt-8 border-t border-border/50">
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
             <div className="text-sm text-muted-foreground">
-              © {currentYear} ChainSage. All rights reserved. Built with v0 by Vercel.
+              © {currentYear} 0g-Sygna. All rights reserved. Built with v0 by Vercel.
             </div>
             <div className="flex items-center space-x-6 text-sm text-muted-foreground">
               <span>Powered by Ethereum, Polygon, BSC, Arbitrum</span>

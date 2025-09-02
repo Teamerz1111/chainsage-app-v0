@@ -8,6 +8,8 @@ import { AlertTriangle, Shield, Eye, EyeOff, Clock, TrendingDown, Zap, Users } f
 import { cn } from "@/lib/utils"
 import { apiService } from "@/lib/api"
 import { wsService } from "@/lib/websocket"
+import { IntelligentRiskScorer, RiskFactors } from "@/lib/risk-scoring"
+import { SeverityTag } from "@/components/severity-tag"
 
 type RiskSeverity = "Low" | "Medium" | "High" | "Critical"
 
@@ -20,6 +22,9 @@ interface RiskAlert {
   time: string
   acknowledged?: boolean
   chain?: string
+  riskScore?: number
+  confidence?: number
+  factors?: RiskFactors
 }
 
 const mockRiskData: RiskAlert[] = [
@@ -31,6 +36,16 @@ const mockRiskData: RiskAlert[] = [
     tags: ["Whale", "CEX", "Large Transfer"],
     time: "1m ago",
     chain: "ethereum",
+    riskScore: 72,
+    confidence: 88,
+    factors: {
+      transactionVolume: 85,
+      frequencyScore: 45,
+      contractRisk: 30,
+      networkReputation: 60,
+      walletAge: 80,
+      behaviorPattern: 70
+    }
   },
   {
     id: "r_02",
@@ -40,6 +55,16 @@ const mockRiskData: RiskAlert[] = [
     tags: ["New Contract", "Unverified"],
     time: "6m ago",
     chain: "ethereum",
+    riskScore: 45,
+    confidence: 75,
+    factors: {
+      transactionVolume: 30,
+      frequencyScore: 60,
+      contractRisk: 80,
+      networkReputation: 70,
+      walletAge: 85,
+      behaviorPattern: 40
+    }
   },
   {
     id: "r_03",
@@ -49,6 +74,16 @@ const mockRiskData: RiskAlert[] = [
     tags: ["Honeypot", "Scam", "Token"],
     time: "12m ago",
     chain: "bsc",
+    riskScore: 95,
+    confidence: 92,
+    factors: {
+      transactionVolume: 60,
+      frequencyScore: 90,
+      contractRisk: 100,
+      networkReputation: 20,
+      walletAge: 40,
+      behaviorPattern: 95
+    }
   },
   {
     id: "r_04",
@@ -58,6 +93,16 @@ const mockRiskData: RiskAlert[] = [
     tags: ["Flash Loan", "MEV", "Arbitrage"],
     time: "18m ago",
     chain: "ethereum",
+    riskScore: 78,
+    confidence: 85,
+    factors: {
+      transactionVolume: 90,
+      frequencyScore: 95,
+      contractRisk: 75,
+      networkReputation: 60,
+      walletAge: 30,
+      behaviorPattern: 85
+    }
   },
   {
     id: "r_05",
@@ -67,6 +112,16 @@ const mockRiskData: RiskAlert[] = [
     tags: ["Volume Spike", "Trading"],
     time: "25m ago",
     chain: "polygon",
+    riskScore: 25,
+    confidence: 70,
+    factors: {
+      transactionVolume: 40,
+      frequencyScore: 30,
+      contractRisk: 20,
+      networkReputation: 80,
+      walletAge: 90,
+      behaviorPattern: 35
+    }
   },
   {
     id: "r_06",
@@ -76,6 +131,16 @@ const mockRiskData: RiskAlert[] = [
     tags: ["Governance", "DAO", "Proposal"],
     time: "32m ago",
     chain: "arbitrum",
+    riskScore: 55,
+    confidence: 80,
+    factors: {
+      transactionVolume: 60,
+      frequencyScore: 40,
+      contractRisk: 70,
+      networkReputation: 75,
+      walletAge: 85,
+      behaviorPattern: 50
+    }
   },
 ]
 
@@ -142,10 +207,23 @@ export function RiskFeed() {
           // Fallback to mock data on error
           setAlerts(mockRiskData)
         } else if (result.data?.alerts) {
-          // Transform backend alert data to frontend format
+          // Transform backend alert data to frontend format with intelligent scoring
           const transformedAlerts: RiskAlert[] = result.data.alerts.map((alert: any, index: number) => {
             const classification = alert.classification
             const riskLevel = classification?.riskLevel || 'low'
+            
+            // Generate risk factors from classification data
+            const factors: RiskFactors = {
+              transactionVolume: classification?.transactionVolume || 50,
+              frequencyScore: classification?.frequencyScore || 50,
+              contractRisk: classification?.contractRisk || 50,
+              networkReputation: classification?.networkReputation || 50,
+              walletAge: classification?.walletAge || 50,
+              behaviorPattern: classification?.behaviorPattern || 50,
+            }
+
+            // Calculate intelligent risk score
+            const { score, severity, confidence } = IntelligentRiskScorer.calculateRiskScore(factors)
             
             // Map backend risk levels to frontend severity
             const severityMap: Record<string, RiskSeverity> = {
@@ -157,15 +235,34 @@ export function RiskFeed() {
 
             return {
               id: alert.transactionHash || `risk_${index}`,
-              severity: severityMap[riskLevel] || 'Low',
+              severity: severityMap[severity] || 'Low',
               title: classification?.isUnusual ? 'Unusual Activity Detected' : 'Transaction Classified',
               detail: classification?.reason || 'Transaction analyzed by AI classification system',
               tags: classification?.anomalies || ['AI Classified'],
               time: alert.timestamp ? new Date(alert.timestamp).toLocaleString() : 'Unknown',
-              chain: 'ethereum', // Default to ethereum for now
+              chain: 'ethereum',
+              riskScore: score,
+              confidence,
+              factors,
             }
           })
           setAlerts(transformedAlerts)
+
+          // Store risk metadata to 0G for audit trail
+          transformedAlerts.forEach(async (alert) => {
+            if (alert.factors && alert.riskScore && alert.confidence) {
+              try {
+                const metadata = IntelligentRiskScorer.generateRiskMetadata(
+                  alert.id, 
+                  alert.factors, 
+                  alert.tags
+                )
+                await apiService.storeRiskMetadata(metadata)
+              } catch (error) {
+                console.warn(`Failed to store metadata for alert ${alert.id}:`, error)
+              }
+            }
+          })
         } else {
           // No data available, use mock data
           setAlerts(mockRiskData)
@@ -183,19 +280,41 @@ export function RiskFeed() {
 
     // Set up WebSocket connection for real-time alerts
     wsService.connect()
-    const unsubscribe = wsService.subscribe('unusual_activity_detected', (message) => {
+    const unsubscribe = wsService.subscribe('unusual_activity_detected', async (message) => {
       const analysis = message.data.analysis
       if (analysis && analysis.isUnusual) {
+        // Generate intelligent risk factors from analysis
+        const factors: RiskFactors = {
+          transactionVolume: analysis.transactionVolume || 50,
+          frequencyScore: analysis.frequencyScore || 50,
+          contractRisk: analysis.contractRisk || 50,
+          networkReputation: analysis.networkReputation || 50,
+          walletAge: analysis.walletAge || 50,
+          behaviorPattern: analysis.behaviorPattern || 50,
+        }
+
+        const { score, severity, confidence } = IntelligentRiskScorer.calculateRiskScore(factors)
+        
+        const alertId = `ws_${Date.now()}`
         const newAlert: RiskAlert = {
-          id: `ws_${Date.now()}`,
-          severity: analysis.riskLevel === 'critical' ? 'Critical' :
-                   analysis.riskLevel === 'high' ? 'High' :
-                   analysis.riskLevel === 'medium' ? 'Medium' : 'Low',
+          id: alertId,
+          severity: severity.charAt(0).toUpperCase() + severity.slice(1) as RiskSeverity,
           title: 'Unusual Wallet Activity Detected',
           detail: `Wallet ${message.data.walletAddress} shows unusual patterns: ${analysis.anomalies?.join(', ') || 'Multiple anomalies detected'}`,
           tags: analysis.anomalies || ['Real-time Alert'],
           time: 'just now',
           chain: 'ethereum',
+          riskScore: score,
+          confidence,
+          factors,
+        }
+
+        // Store risk metadata to 0G for audit trail
+        try {
+          const metadata = IntelligentRiskScorer.generateRiskMetadata(alertId, factors, analysis.anomalies)
+          await apiService.storeRiskMetadata(metadata)
+        } catch (error) {
+          console.warn('Failed to store risk metadata to 0G:', error)
         }
         
         setAlerts(prev => [newAlert, ...prev.slice(0, 19)])
@@ -309,9 +428,12 @@ export function RiskFeed() {
                       <div className="flex items-center space-x-3 mb-2">
                         <SeverityIcon className={cn("h-5 w-5", config.color)} />
                         <h3 className="font-semibold text-foreground">{alert.title}</h3>
-                        <Badge className={cn("text-xs font-medium", config.color, config.bgColor, config.borderColor)}>
-                          {alert.severity}
-                        </Badge>
+                        <SeverityTag 
+                          severity={alert.severity.toLowerCase() as 'low' | 'medium' | 'high' | 'critical'}
+                          score={alert.riskScore || 0}
+                          confidence={alert.confidence || 0}
+                          size="sm"
+                        />
                         {alert.chain && (
                           <Badge className={cn("text-xs", getChainBadgeColor(alert.chain))}>{alert.chain}</Badge>
                         )}

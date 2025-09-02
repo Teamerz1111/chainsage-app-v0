@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button"
 import { ArrowRight, Shield, Zap } from "lucide-react"
 import { useEffect, useRef } from "react"
+import Link from "next/link"
 
 export function HeroSection() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -173,14 +174,15 @@ export function HeroSection() {
 
         {/* CTA Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in-up delay-500">
-          <Button
-            size="lg"
-            onClick={() => scrollToSection("activity")}
-            className="bg-primary text-primary-foreground hover:bg-primary/90 neon-glow font-semibold px-8 py-3 text-lg transition-all duration-200 hover:scale-105 hover:shadow-lg hover:shadow-primary/25"
-          >
-            Open Dashboard
-            <ArrowRight className="ml-2 h-5 w-5" />
-          </Button>
+          <Link href="/admin">
+            <Button
+              size="lg"
+              className="bg-primary text-primary-foreground hover:bg-primary/90 neon-glow font-semibold px-8 py-3 text-lg transition-all duration-200 hover:scale-105 hover:shadow-lg hover:shadow-primary/25"
+            >
+              Open Dashboard
+              <ArrowRight className="ml-2 h-5 w-5" />
+            </Button>
+          </Link>
           <Button
             size="lg"
             variant="outline"

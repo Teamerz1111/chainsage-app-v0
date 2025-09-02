@@ -3,7 +3,7 @@ import { AdminDashboard } from "@/components/admin-dashboard"
 
 export default function AdminPage() {
   return (
-    <ProtectedRoute title="ChainSage Admin" description="Manage your blockchain monitoring preferences and watchlists">
+    <ProtectedRoute title="0g-Sygna Admin" description="Manage your blockchain monitoring preferences and watchlists">
       <AdminDashboard />
     </ProtectedRoute>
   )
