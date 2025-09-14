@@ -6,6 +6,17 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { Input } from "@/components/ui/input"
+import { Switch } from "@/components/ui/switch"
+import { Label } from "@/components/ui/label"
+import { Separator } from "@/components/ui/separator"
+import {
   Settings,
   Bell,
   BarChart3,
@@ -19,6 +30,12 @@ import {
   MessageCircle,
   Send,
   X,
+  Mail,
+  Plus,
+  Trash2,
+  Wallet,
+  Image,
+  DollarSign,
 } from "lucide-react"
 import { WatchlistManagement } from "@/components/watchlist-management"
 import Link from "next/link"
@@ -38,6 +55,27 @@ export function AdminDashboard() {
     },
   ])
   const [newMessage, setNewMessage] = useState("")
+  
+  // Settings state
+  const [watchlists, setWatchlists] = useState({
+    tokens: [],
+    wallets: [],
+    nfts: []
+  })
+  const [thresholds, setThresholds] = useState({
+    priceChange: 10,
+    volumeChange: 50,
+    transactionAmount: 1000
+  })
+  const [notifications, setNotifications] = useState({
+    email: true,
+    telegram: false,
+    discord: true
+  })
+  const [newWatchlistItem, setNewWatchlistItem] = useState({
+    type: 'tokens',
+    value: ''
+  })
 
   const formatAddress = (addr: string) => {
     return `${addr.slice(0, 8)}...${addr.slice(-6)}`
@@ -344,15 +382,232 @@ export function AdminDashboard() {
 
               {/* Settings Section */}
               {activeSection === "settings" && (
-                <Card className="bg-cyber-dark/50 border-cyber-cyan/20">
-                  <CardHeader>
-                    <CardTitle className="text-white">Settings</CardTitle>
-                    <CardDescription>Configure your preferences</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-gray-400">Settings panel coming soon...</p>
-                  </CardContent>
-                </Card>
+                <div className="space-y-6">
+                  {/* Alert Preferences */}
+                  <Card className="bg-cyber-dark/50 border-cyber-cyan/20">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-white">
+                        <Bell className="w-5 h-5 text-cyber-green" />
+                        Alert Preferences
+                      </CardTitle>
+                      <CardDescription>Configure your notification settings and preferences</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                      {/* Notification Channels */}
+                      <div>
+                        <h3 className="text-lg font-medium text-white mb-4">Notification Channels</h3>
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <Mail className="w-4 h-4 text-blue-400" />
+                              <Label htmlFor="email-notifications" className="text-white">Email Notifications</Label>
+                            </div>
+                            <Switch
+                              id="email-notifications"
+                              checked={notifications.email}
+                              onCheckedChange={(checked) => setNotifications(prev => ({ ...prev, email: checked }))}
+                            />
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <Send className="w-4 h-4 text-cyan-400" />
+                              <Label htmlFor="telegram-notifications" className="text-white">Telegram Notifications</Label>
+                            </div>
+                            <Switch
+                              id="telegram-notifications"
+                              checked={notifications.telegram}
+                              onCheckedChange={(checked) => setNotifications(prev => ({ ...prev, telegram: checked }))}
+                            />
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <MessageCircle className="w-4 h-4 text-purple-400" />
+                              <Label htmlFor="discord-notifications" className="text-white">Discord Notifications</Label>
+                            </div>
+                            <Switch
+                              id="discord-notifications"
+                              checked={notifications.discord}
+                              onCheckedChange={(checked) => setNotifications(prev => ({ ...prev, discord: checked }))}
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <Separator className="bg-cyber-cyan/20" />
+
+                      {/* Custom Thresholds */}
+                      <div>
+                        <h3 className="text-lg font-medium text-white mb-4">Alert Thresholds</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="price-threshold" className="text-white">Price Change (%)</Label>
+                            <Input
+                              id="price-threshold"
+                              type="number"
+                              value={thresholds.priceChange}
+                              onChange={(e) => setThresholds(prev => ({ ...prev, priceChange: Number(e.target.value) }))}
+                              className="bg-cyber-dark/30 border-cyber-cyan/30 text-white"
+                              placeholder="10"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="volume-threshold" className="text-white">Volume Change (%)</Label>
+                            <Input
+                              id="volume-threshold"
+                              type="number"
+                              value={thresholds.volumeChange}
+                              onChange={(e) => setThresholds(prev => ({ ...prev, volumeChange: Number(e.target.value) }))}
+                              className="bg-cyber-dark/30 border-cyber-cyan/30 text-white"
+                              placeholder="50"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="transaction-threshold" className="text-white">Transaction Amount ($)</Label>
+                            <Input
+                              id="transaction-threshold"
+                              type="number"
+                              value={thresholds.transactionAmount}
+                              onChange={(e) => setThresholds(prev => ({ ...prev, transactionAmount: Number(e.target.value) }))}
+                              className="bg-cyber-dark/30 border-cyber-cyan/30 text-white"
+                              placeholder="1000"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Watchlists Management */}
+                  <Card className="bg-cyber-dark/50 border-cyber-cyan/20">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-white">
+                        <Users className="w-5 h-5 text-purple-400" />
+                        Watchlists Management
+                      </CardTitle>
+                      <CardDescription>Manage your tokens, wallets, and NFTs watchlists</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                      {/* Add New Item */}
+                      <div className="flex gap-2">
+                        <Select value={newWatchlistItem.type} onValueChange={(value) => setNewWatchlistItem(prev => ({ ...prev, type: value }))}>
+                          <SelectTrigger className="w-32 bg-cyber-dark/30 border-cyber-cyan/30 text-white">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="bg-cyber-dark border-cyber-cyan/30">
+                            <SelectItem value="tokens">Tokens</SelectItem>
+                            <SelectItem value="wallets">Wallets</SelectItem>
+                            <SelectItem value="nfts">NFTs</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Input
+                          value={newWatchlistItem.value}
+                          onChange={(e) => setNewWatchlistItem(prev => ({ ...prev, value: e.target.value }))}
+                          placeholder={`Add ${newWatchlistItem.type === 'tokens' ? 'token address or symbol' : newWatchlistItem.type === 'wallets' ? 'wallet address' : 'NFT collection'}`}
+                          className="flex-1 bg-cyber-dark/30 border-cyber-cyan/30 text-white"
+                        />
+                        <Button
+                          onClick={() => {
+                            if (newWatchlistItem.value.trim()) {
+                              setWatchlists(prev => ({
+                                ...prev,
+                                [newWatchlistItem.type]: [...prev[newWatchlistItem.type], { id: Date.now(), value: newWatchlistItem.value }]
+                              }))
+                              setNewWatchlistItem(prev => ({ ...prev, value: '' }))
+                            }
+                          }}
+                          className="bg-cyber-green/20 border border-cyber-green/30 text-cyber-green hover:bg-cyber-green/30"
+                        >
+                          <Plus className="w-4 h-4" />
+                        </Button>
+                      </div>
+
+                      {/* Watchlist Categories */}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {/* Tokens */}
+                        <div>
+                          <h4 className="flex items-center gap-2 text-sm font-medium text-white mb-3">
+                            <DollarSign className="w-4 h-4 text-amber-400" />
+                            Tokens ({watchlists.tokens.length})
+                          </h4>
+                          <div className="space-y-2 max-h-40 overflow-y-auto">
+                            {watchlists.tokens.length === 0 ? (
+                              <p className="text-xs text-gray-400">No tokens added</p>
+                            ) : (
+                              watchlists.tokens.map((token) => (
+                                <div key={token.id} className="flex items-center justify-between p-2 bg-cyber-dark/30 rounded border border-cyber-cyan/20">
+                                  <span className="text-xs text-white truncate">{token.value}</span>
+                                  <button
+                                    onClick={() => setWatchlists(prev => ({ ...prev, tokens: prev.tokens.filter(t => t.id !== token.id) }))}
+                                    className="text-red-400 hover:text-red-300"
+                                  >
+                                    <Trash2 className="w-3 h-3" />
+                                  </button>
+                                </div>
+                              ))
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Wallets */}
+                        <div>
+                          <h4 className="flex items-center gap-2 text-sm font-medium text-white mb-3">
+                            <Wallet className="w-4 h-4 text-cyan-400" />
+                            Wallets ({watchlists.wallets.length})
+                          </h4>
+                          <div className="space-y-2 max-h-40 overflow-y-auto">
+                            {watchlists.wallets.length === 0 ? (
+                              <p className="text-xs text-gray-400">No wallets added</p>
+                            ) : (
+                              watchlists.wallets.map((wallet) => (
+                                <div key={wallet.id} className="flex items-center justify-between p-2 bg-cyber-dark/30 rounded border border-cyber-cyan/20">
+                                  <span className="text-xs text-white truncate">{wallet.value}</span>
+                                  <button
+                                    onClick={() => setWatchlists(prev => ({ ...prev, wallets: prev.wallets.filter(w => w.id !== wallet.id) }))}
+                                    className="text-red-400 hover:text-red-300"
+                                  >
+                                    <Trash2 className="w-3 h-3" />
+                                  </button>
+                                </div>
+                              ))
+                            )}
+                          </div>
+                        </div>
+
+                        {/* NFTs */}
+                        <div>
+                          <h4 className="flex items-center gap-2 text-sm font-medium text-white mb-3">
+                            <Image className="w-4 h-4 text-purple-400" />
+                            NFTs ({watchlists.nfts.length})
+                          </h4>
+                          <div className="space-y-2 max-h-40 overflow-y-auto">
+                            {watchlists.nfts.length === 0 ? (
+                              <p className="text-xs text-gray-400">No NFTs added</p>
+                            ) : (
+                              watchlists.nfts.map((nft) => (
+                                <div key={nft.id} className="flex items-center justify-between p-2 bg-cyber-dark/30 rounded border border-cyber-cyan/20">
+                                  <span className="text-xs text-white truncate">{nft.value}</span>
+                                  <button
+                                    onClick={() => setWatchlists(prev => ({ ...prev, nfts: prev.nfts.filter(n => n.id !== nft.id) }))}
+                                    className="text-red-400 hover:text-red-300"
+                                  >
+                                    <Trash2 className="w-3 h-3" />
+                                  </button>
+                                </div>
+                              ))
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Save Settings Button */}
+                      <div className="flex justify-end pt-4 border-t border-cyber-cyan/20">
+                        <Button className="bg-cyber-cyan/20 border border-cyber-cyan/30 text-cyber-cyan hover:bg-cyber-cyan/30">
+                          Save Settings
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
               )}
             </div>
           </main>
