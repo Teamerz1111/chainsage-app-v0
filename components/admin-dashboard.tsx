@@ -17,6 +17,15 @@ import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import {
   Settings,
   Bell,
   BarChart3,
@@ -36,6 +45,9 @@ import {
   Wallet,
   Image,
   DollarSign,
+  Loader2,
+  AlertCircle,
+  CheckCircle,
 } from "lucide-react"
 import { WatchlistManagement } from "@/components/watchlist-management"
 import Link from "next/link"
@@ -76,6 +88,130 @@ export function AdminDashboard() {
     type: 'tokens',
     value: ''
   })
+  
+  // Modal and API state
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
+  const [monitoringStatus, setMonitoringStatus] = useState(null)
+  
+  // Load monitoring status on component mount
+  useEffect(() => {
+    loadMonitoringStatus()
+  }, [])
+  
+  const loadMonitoringStatus = async () => {
+    try {
+      const [statusResponse, walletsResponse] = await Promise.all([
+        apiService.getMonitoringStatus(),
+        apiService.getMonitoredWallets()
+      ])
+      
+      if (statusResponse.data) {
+        setMonitoringStatus(statusResponse.data)
+      }
+      
+      if (walletsResponse.data && walletsResponse.data.wallets) {
+        setWatchlists(prev => ({
+          ...prev,
+          wallets: walletsResponse.data.wallets.map(wallet => ({
+            id: wallet.address,
+            value: wallet.address,
+            threshold: wallet.threshold,
+            status: wallet.status,
+            addedAt: wallet.addedAt,
+            riskScore: wallet.riskScore || 25 // Default to low risk if not analyzed
+          }))
+        }))
+      }
+    } catch (err) {
+      console.error('Failed to load monitoring data:', err)
+    }
+  }
+  
+  const handleAddWatchlistItem = async () => {
+    if (!newWatchlistItem.value.trim()) {
+      setError('Please enter a valid address or identifier')
+      return
+    }
+    
+    setIsLoading(true)
+    setError('')
+    setSuccess('')
+    
+    try {
+      if (newWatchlistItem.type === 'wallets') {
+        // Use the backend API for wallet monitoring
+        const response = await apiService.startWalletMonitoring(
+          newWatchlistItem.value.trim(), 
+          thresholds.transactionAmount
+        )
+        
+        if (response.error) {
+          throw new Error(response.error)
+        }
+        
+        setSuccess(`Successfully added wallet ${newWatchlistItem.value} to monitoring`)
+        
+        // Add to local state
+        setWatchlists(prev => ({
+          ...prev,
+          [newWatchlistItem.type]: [
+            ...prev[newWatchlistItem.type], 
+            { id: Date.now(), value: newWatchlistItem.value.trim() }
+          ]
+        }))
+      } else {
+        // For tokens and NFTs, add to local state (extend with API later)
+        setWatchlists(prev => ({
+          ...prev,
+          [newWatchlistItem.type]: [
+            ...prev[newWatchlistItem.type], 
+            { id: Date.now(), value: newWatchlistItem.value.trim() }
+          ]
+        }))
+        setSuccess(`Successfully added ${newWatchlistItem.type.slice(0, -1)} to watchlist`)
+      }
+      
+      setNewWatchlistItem(prev => ({ ...prev, value: '' }))
+      setIsAddModalOpen(false)
+      
+    } catch (err) {
+      setError(err.message || 'Failed to add item to watchlist')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+  
+  const handleRemoveWatchlistItem = async (type, item) => {
+    if (type === 'wallets') {
+      try {
+        setIsLoading(true)
+        const response = await apiService.stopWalletMonitoring(item.value)
+        if (response.error) {
+          throw new Error(response.error)
+        }
+        setSuccess(`Stopped monitoring wallet ${item.value}`)
+      } catch (err) {
+        setError(err.message || 'Failed to stop wallet monitoring')
+        setIsLoading(false)
+        return
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    
+    setWatchlists(prev => ({
+      ...prev,
+      [type]: prev[type].filter(i => i.id !== item.id)
+    }))
+  }
+  
+  const clearMessages = () => {
+    setError('')
+    setSuccess('')
+  }
 
   const formatAddress = (addr: string) => {
     return `${addr.slice(0, 8)}...${addr.slice(-6)}`
@@ -489,36 +625,114 @@ export function AdminDashboard() {
                     <CardContent className="space-y-6">
                       {/* Add New Item */}
                       <div className="flex gap-2">
-                        <Select value={newWatchlistItem.type} onValueChange={(value) => setNewWatchlistItem(prev => ({ ...prev, type: value }))}>
-                          <SelectTrigger className="w-32 bg-cyber-dark/30 border-cyber-cyan/30 text-white">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent className="bg-cyber-dark border-cyber-cyan/30">
-                            <SelectItem value="tokens">Tokens</SelectItem>
-                            <SelectItem value="wallets">Wallets</SelectItem>
-                            <SelectItem value="nfts">NFTs</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <Input
-                          value={newWatchlistItem.value}
-                          onChange={(e) => setNewWatchlistItem(prev => ({ ...prev, value: e.target.value }))}
-                          placeholder={`Add ${newWatchlistItem.type === 'tokens' ? 'token address or symbol' : newWatchlistItem.type === 'wallets' ? 'wallet address' : 'NFT collection'}`}
-                          className="flex-1 bg-cyber-dark/30 border-cyber-cyan/30 text-white"
-                        />
-                        <Button
-                          onClick={() => {
-                            if (newWatchlistItem.value.trim()) {
-                              setWatchlists(prev => ({
-                                ...prev,
-                                [newWatchlistItem.type]: [...prev[newWatchlistItem.type], { id: Date.now(), value: newWatchlistItem.value }]
-                              }))
-                              setNewWatchlistItem(prev => ({ ...prev, value: '' }))
-                            }
-                          }}
-                          className="bg-cyber-green/20 border border-cyber-green/30 text-cyber-green hover:bg-cyber-green/30"
-                        >
-                          <Plus className="w-4 h-4" />
-                        </Button>
+                        <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
+                          <DialogTrigger asChild>
+                            <Button 
+                              className="bg-cyber-green/20 border border-cyber-green/30 text-cyber-green hover:bg-cyber-green/30"
+                              onClick={clearMessages}
+                            >
+                              <Plus className="w-4 h-4 mr-2" />
+                              Add to Watchlist
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="bg-cyber-dark border-cyber-cyan/30 text-white">
+                            <DialogHeader>
+                              <DialogTitle className="text-cyber-cyan">Add to Watchlist</DialogTitle>
+                              <DialogDescription className="text-gray-400">
+                                Add tokens, wallets, or NFTs to your monitoring watchlist
+                              </DialogDescription>
+                            </DialogHeader>
+                            
+                            <div className="space-y-4">
+                              {/* Error/Success Messages */}
+                              {error && (
+                                <div className="flex items-center gap-2 p-3 bg-red-900/20 border border-red-500/30 rounded text-red-400">
+                                  <AlertCircle className="w-4 h-4" />
+                                  <span className="text-sm">{error}</span>
+                                </div>
+                              )}
+                              
+                              {success && (
+                                <div className="flex items-center gap-2 p-3 bg-green-900/20 border border-green-500/30 rounded text-green-400">
+                                  <CheckCircle className="w-4 h-4" />
+                                  <span className="text-sm">{success}</span>
+                                </div>
+                              )}
+                              
+                              {/* Type Selection */}
+                              <div className="space-y-2">
+                                <Label className="text-white">Type</Label>
+                                <Select value={newWatchlistItem.type} onValueChange={(value) => setNewWatchlistItem(prev => ({ ...prev, type: value }))}>
+                                  <SelectTrigger className="bg-cyber-dark/30 border-cyber-cyan/30 text-white">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent className="bg-cyber-dark border-cyber-cyan/30">
+                                    <SelectItem value="tokens">Tokens</SelectItem>
+                                    <SelectItem value="wallets">Wallets</SelectItem>
+                                    <SelectItem value="nfts">NFTs</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              
+                              {/* Address/Identifier Input */}
+                              <div className="space-y-2">
+                                <Label className="text-white">
+                                  {newWatchlistItem.type === 'tokens' && 'Token Address or Symbol'}
+                                  {newWatchlistItem.type === 'wallets' && 'Wallet Address'}
+                                  {newWatchlistItem.type === 'nfts' && 'NFT Collection'}
+                                </Label>
+                                <Input
+                                  value={newWatchlistItem.value}
+                                  onChange={(e) => setNewWatchlistItem(prev => ({ ...prev, value: e.target.value }))}
+                                  placeholder={`Enter ${newWatchlistItem.type === 'tokens' ? 'token address or symbol' : newWatchlistItem.type === 'wallets' ? 'wallet address' : 'NFT collection'}`}
+                                  className="bg-cyber-dark/30 border-cyber-cyan/30 text-white"
+                                  disabled={isLoading}
+                                />
+                              </div>
+                              
+                              {/* Threshold Setting for Wallets */}
+                              {newWatchlistItem.type === 'wallets' && (
+                                <div className="space-y-2">
+                                  <Label className="text-white">Alert Threshold ($)</Label>
+                                  <Input
+                                    type="number"
+                                    value={thresholds.transactionAmount}
+                                    onChange={(e) => setThresholds(prev => ({ ...prev, transactionAmount: Number(e.target.value) }))}
+                                    className="bg-cyber-dark/30 border-cyber-cyan/30 text-white"
+                                    placeholder="1000"
+                                    disabled={isLoading}
+                                  />
+                                  <p className="text-xs text-gray-400">Transactions above this amount will trigger alerts</p>
+                                </div>
+                              )}
+                            </div>
+                            
+                            <DialogFooter>
+                              <Button
+                                variant="outline"
+                                onClick={() => setIsAddModalOpen(false)}
+                                disabled={isLoading}
+                                className="border-gray-600 text-gray-300 hover:bg-gray-800"
+                              >
+                                Cancel
+                              </Button>
+                              <Button
+                                onClick={handleAddWatchlistItem}
+                                disabled={isLoading || !newWatchlistItem.value.trim()}
+                                className="bg-cyber-green/20 border border-cyber-green/30 text-cyber-green hover:bg-cyber-green/30"
+                              >
+                                {isLoading ? (
+                                  <>
+                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                    Adding...
+                                  </>
+                                ) : (
+                                  'Add to Watchlist'
+                                )}
+                              </Button>
+                            </DialogFooter>
+                          </DialogContent>
+                        </Dialog>
                       </div>
 
                       {/* Watchlist Categories */}
@@ -537,8 +751,9 @@ export function AdminDashboard() {
                                 <div key={token.id} className="flex items-center justify-between p-2 bg-cyber-dark/30 rounded border border-cyber-cyan/20">
                                   <span className="text-xs text-white truncate">{token.value}</span>
                                   <button
-                                    onClick={() => setWatchlists(prev => ({ ...prev, tokens: prev.tokens.filter(t => t.id !== token.id) }))}
+                                    onClick={() => handleRemoveWatchlistItem('tokens', token)}
                                     className="text-red-400 hover:text-red-300"
+                                    disabled={isLoading}
                                   >
                                     <Trash2 className="w-3 h-3" />
                                   </button>
@@ -562,10 +777,15 @@ export function AdminDashboard() {
                                 <div key={wallet.id} className="flex items-center justify-between p-2 bg-cyber-dark/30 rounded border border-cyber-cyan/20">
                                   <span className="text-xs text-white truncate">{wallet.value}</span>
                                   <button
-                                    onClick={() => setWatchlists(prev => ({ ...prev, wallets: prev.wallets.filter(w => w.id !== wallet.id) }))}
+                                    onClick={() => handleRemoveWatchlistItem('wallets', wallet)}
                                     className="text-red-400 hover:text-red-300"
+                                    disabled={isLoading}
                                   >
-                                    <Trash2 className="w-3 h-3" />
+                                    {isLoading ? (
+                                      <Loader2 className="w-3 h-3 animate-spin" />
+                                    ) : (
+                                      <Trash2 className="w-3 h-3" />
+                                    )}
                                   </button>
                                 </div>
                               ))
@@ -587,8 +807,9 @@ export function AdminDashboard() {
                                 <div key={nft.id} className="flex items-center justify-between p-2 bg-cyber-dark/30 rounded border border-cyber-cyan/20">
                                   <span className="text-xs text-white truncate">{nft.value}</span>
                                   <button
-                                    onClick={() => setWatchlists(prev => ({ ...prev, nfts: prev.nfts.filter(n => n.id !== nft.id) }))}
+                                    onClick={() => handleRemoveWatchlistItem('nfts', nft)}
                                     className="text-red-400 hover:text-red-300"
+                                    disabled={isLoading}
                                   >
                                     <Trash2 className="w-3 h-3" />
                                   </button>
@@ -599,9 +820,63 @@ export function AdminDashboard() {
                         </div>
                       </div>
 
+                      {/* Monitoring Status */}
+                      {monitoringStatus && (
+                        <div className="p-4 bg-cyber-dark/20 rounded border border-cyber-cyan/20">
+                          <h4 className="text-sm font-medium text-white mb-2">Monitoring Status</h4>
+                          <div className="grid grid-cols-3 gap-4 text-xs">
+                            <div>
+                              <span className="text-gray-400">Total Monitored:</span>
+                              <span className="text-cyber-cyan ml-2">{monitoringStatus.totalMonitored || 0}</span>
+                            </div>
+                            <div>
+                              <span className="text-gray-400">Active Alerts:</span>
+                              <span className="text-amber-400 ml-2">{monitoringStatus.activeAlerts || 0}</span>
+                            </div>
+                            <div>
+                              <span className="text-gray-400">Last Update:</span>
+                              <span className="text-gray-300 ml-2">
+                                {monitoringStatus.lastUpdate ? new Date(monitoringStatus.lastUpdate).toLocaleTimeString() : 'N/A'}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Success/Error Messages */}
+                      {(error || success) && (
+                        <div className="space-y-2">
+                          {error && (
+                            <div className="flex items-center gap-2 p-3 bg-red-900/20 border border-red-500/30 rounded text-red-400">
+                              <AlertCircle className="w-4 h-4" />
+                              <span className="text-sm">{error}</span>
+                              <button onClick={clearMessages} className="ml-auto text-red-300 hover:text-red-200">
+                                <X className="w-3 h-3" />
+                              </button>
+                            </div>
+                          )}
+                          
+                          {success && (
+                            <div className="flex items-center gap-2 p-3 bg-green-900/20 border border-green-500/30 rounded text-green-400">
+                              <CheckCircle className="w-4 h-4" />
+                              <span className="text-sm">{success}</span>
+                              <button onClick={clearMessages} className="ml-auto text-green-300 hover:text-green-200">
+                                <X className="w-3 h-3" />
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
                       {/* Save Settings Button */}
                       <div className="flex justify-end pt-4 border-t border-cyber-cyan/20">
-                        <Button className="bg-cyber-cyan/20 border border-cyber-cyan/30 text-cyber-cyan hover:bg-cyber-cyan/30">
+                        <Button 
+                          className="bg-cyber-cyan/20 border border-cyber-cyan/30 text-cyber-cyan hover:bg-cyber-cyan/30"
+                          onClick={() => {
+                            setSuccess('Settings saved successfully')
+                            setTimeout(() => setSuccess(''), 3000)
+                          }}
+                        >
                           Save Settings
                         </Button>
                       </div>

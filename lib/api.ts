@@ -1,6 +1,21 @@
 import { RiskMetadata, RiskFactors } from './risk-scoring'
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://chainsage-backend.onrender.com'
+// Use HTTP for localhost, HTTPS for production
+const getApiBaseUrl = () => {
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL
+  }
+  
+  // Default to localhost for development
+  if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+    return 'http://localhost:3001'
+  }
+  
+  // Production fallback
+  return 'https://chainsage-backend.onrender.com'
+}
+
+const API_BASE_URL = getApiBaseUrl()
 
 export interface ApiResponse<T> {
   data?: T
@@ -131,6 +146,23 @@ class ApiService {
 
   async getMonitoringStatus() {
     return this.makeRequest('/api/wallet/status')
+  }
+
+  async getMonitoredWallets() {
+    return this.makeRequest('/api/wallet/monitored')
+  }
+
+  async getWalletEvents(limit = 50, eventType?: string, walletAddress?: string) {
+    const params = new URLSearchParams({ limit: limit.toString() })
+    if (eventType) params.append('eventType', eventType)
+    if (walletAddress) params.append('walletAddress', walletAddress)
+    return this.makeRequest(`/api/wallet/events?${params}`)
+  }
+
+  async syncWalletsTo0G() {
+    return this.makeRequest('/api/wallet/sync-to-0g', {
+      method: 'POST',
+    })
   }
 
   async getAlerts(limit = 50, severity?: string) {
