@@ -20,8 +20,11 @@ interface WatchlistItem {
   isPinned?: boolean
   chain: string
   type: "wallet" | "contract" | "project"
-  balance?: number
-  transactionCount?: number
+  // Backend fields
+  threshold?: number
+  status?: string
+  alertCount?: number
+  monitoringSince?: number
   addedAt: string
 }
 
@@ -131,10 +134,13 @@ export function WatchlistManagement() {
               riskScore,
               lastEvent: wallet.lastChecked ? formatTimeAgo(wallet.lastChecked) : "just added",
               isPinned: false,
-              chain: "ethereum", // TODO: Detect chain from address
+              chain: "ethereum", // Default chain
               type: "wallet" as const,
-              balance: Math.floor(Math.random() * 1000000), // TODO: Get real balance
-              transactionCount: wallet.alertCount || 0,
+              // Use actual backend data
+              threshold: wallet.threshold,
+              status: wallet.status,
+              alertCount: wallet.alertCount || 0,
+              monitoringSince: wallet.addedAt,
               addedAt: wallet.addedAt ? new Date(wallet.addedAt).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
             }
           })
@@ -236,14 +242,6 @@ export function WatchlistManagement() {
     return `${address.slice(0, 6)}...${address.slice(-4)}`
   }
 
-  const formatBalance = (balance: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(balance)
-  }
 
   const filteredWatchlist = watchlist.filter((item) => {
     if (filter === "pinned") return item.isPinned
@@ -432,24 +430,48 @@ export function WatchlistManagement() {
                         </div>
                       </div>
                       <div>
-                        <div className="text-xs text-gray-500 mb-1">Last Activity</div>
-                        <div className="flex items-center space-x-2 text-sm text-gray-300">
-                          <Clock className="h-4 w-4 text-gray-500" />
-                          <span>{item.lastEvent}</span>
+                        <div className="text-xs text-gray-500 mb-1">Monitoring Status</div>
+                        <div className="flex items-center space-x-2 text-sm">
+                          <div className={cn(
+                            "w-2 h-2 rounded-full",
+                            item.status === 'monitoring_active' ? "bg-cyber-green animate-pulse" : "bg-gray-500"
+                          )} />
+                          <span className="text-gray-300 capitalize">
+                            {item.status?.replace('monitoring_', '') || 'Active'}
+                          </span>
                         </div>
                       </div>
-                      {item.balance && (
+                      {item.threshold && (
                         <div>
-                          <div className="text-xs text-gray-500 mb-1">Balance</div>
-                          <div className="text-sm font-medium text-cyber-cyan">{formatBalance(item.balance)}</div>
+                          <div className="text-xs text-gray-500 mb-1">Alert Threshold</div>
+                          <div className="text-sm font-medium text-amber-400">
+                            ${item.threshold.toLocaleString()}
+                          </div>
                         </div>
                       )}
                       <div>
-                        <div className="text-xs text-gray-500 mb-1">Transactions</div>
-                        <div className="text-sm font-medium text-gray-300">
-                          {item.transactionCount?.toLocaleString()}
+                        <div className="text-xs text-gray-500 mb-1">Alerts Triggered</div>
+                        <div className="flex items-center space-x-2 text-sm">
+                          <AlertTriangle className="h-4 w-4 text-amber-400" />
+                          <span className="text-gray-300 font-medium">
+                            {item.alertCount || 0}
+                          </span>
                         </div>
                       </div>
+                    </div>
+                    
+                    {/* Additional info row */}
+                    <div className="grid grid-cols-2 gap-4 text-xs text-gray-500">
+                      <div>
+                        <span>Added: </span>
+                        <span className="text-gray-400">{item.addedAt}</span>
+                      </div>
+                      {item.monitoringSince && (
+                        <div>
+                          <span>Monitoring: </span>
+                          <span className="text-gray-400">{formatTimeAgo(item.monitoringSince)}</span>
+                        </div>
+                      )}
                     </div>
                   </div>
 
