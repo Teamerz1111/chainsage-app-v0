@@ -26,59 +26,60 @@ interface WatchlistItem {
 }
 
 const mockWatchlistData: WatchlistItem[] = [
-  {
-    id: "w_01",
-    label: "Project Alpha",
-    address: "0x742d35Cc6634C0532925a3b8D4C0532925a3b8D4",
-    riskScore: 72,
-    lastEvent: "3m ago",
-    isPinned: true,
-    chain: "ethereum",
-    type: "project",
-    balance: 1250000,
-    transactionCount: 1847,
-    addedAt: "2024-01-15",
-  },
-  {
-    id: "w_02",
-    label: "Whale #7",
-    address: "0x8ba1f109551bD432803012645Hac136c22C57592",
-    riskScore: 58,
-    lastEvent: "12m ago",
-    chain: "ethereum",
-    type: "wallet",
-    balance: 850000,
-    transactionCount: 3421,
-    addedAt: "2024-01-14",
-  },
-  {
-    id: "w_03",
-    label: "DeFi Protocol",
-    address: "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984",
-    riskScore: 25,
-    lastEvent: "1h ago",
-    chain: "ethereum",
-    type: "contract",
-    transactionCount: 15672,
-    addedAt: "2024-01-13",
-  },
-  {
-    id: "w_04",
-    label: "Suspicious Wallet",
-    address: "0x9f3a2b1c4d5e6f7890abcdef1234567890abcdef",
-    riskScore: 89,
-    lastEvent: "5m ago",
-    chain: "polygon",
-    type: "wallet",
-    balance: 45000,
-    transactionCount: 156,
-    addedAt: "2024-01-12",
-  },
+  // {
+  //   id: "w_01",
+  //   label: "Project Alpha",
+  //   address: "0x742d35Cc6634C0532925a3b8D4C0532925a3b8D4",
+  //   riskScore: 72,
+  //   lastEvent: "3m ago",
+  //   isPinned: true,
+  //   chain: "ethereum",
+  //   type: "project",
+  //   balance: 1250000,
+  //   transactionCount: 1847,
+  //   addedAt: "2024-01-15",
+  // },
+  // {
+  //   id: "w_02",
+  //   label: "Whale #7",
+  //   address: "0x8ba1f109551bD432803012645Hac136c22C57592",
+  //   riskScore: 58,
+  //   lastEvent: "12m ago",
+  //   chain: "ethereum",
+  //   type: "wallet",
+  //   balance: 850000,
+  //   transactionCount: 3421,
+  //   addedAt: "2024-01-14",
+  // },
+  // {
+  //   id: "w_03",
+  //   label: "DeFi Protocol",
+  //   address: "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984",
+  //   riskScore: 25,
+  //   lastEvent: "1h ago",
+  //   chain: "ethereum",
+  //   type: "contract",
+  //   transactionCount: 15672,
+  //   addedAt: "2024-01-13",
+  // },
+  // {
+  //   id: "w_04",
+  //   label: "Suspicious Wallet",
+  //   address: "0x9f3a2b1c4d5e6f7890abcdef1234567890abcdef",
+  //   riskScore: 89,
+  //   lastEvent: "5m ago",
+  //   chain: "polygon",
+  //   type: "wallet",
+  //   balance: 45000,
+  //   transactionCount: 156,
+  //   addedAt: "2024-01-12",
+  // },
 ]
 
 export function WatchlistManagement() {
-  const [watchlist, setWatchlist] = useState<WatchlistItem[]>(mockWatchlistData)
+  const [watchlist, setWatchlist] = useState<WatchlistItem[]>([])
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
   const [newItem, setNewItem] = useState({
     label: "",
     address: "",
@@ -87,21 +88,58 @@ export function WatchlistManagement() {
   })
   const [filter, setFilter] = useState<"all" | "pinned" | "high-risk">("all")
 
-  // Load watchlist from localStorage on mount
+  // Load monitored wallets from backend API on mount
   useEffect(() => {
-    const saved = localStorage.getItem("chainsage-watchlist")
-    if (saved) {
-      try {
-        setWatchlist(JSON.parse(saved))
-      } catch (error) {
-        console.error("Failed to load watchlist from localStorage:", error)
-      }
-    }
+    loadMonitoredWallets()
   }, [])
 
-  // Save watchlist to localStorage whenever it changes
+  const loadMonitoredWallets = async () => {
+    try {
+      setIsLoading(true)
+      const response = await apiService.getMonitoredWallets()
+      
+      if (response.data && response.data.wallets) {
+        // Convert backend wallet data to watchlist format
+        const convertedWallets = response.data.wallets.map((wallet: any) => ({
+          id: wallet.address,
+          label: `Wallet ${wallet.address.slice(0, 8)}...`,
+          address: wallet.address,
+          riskScore: Math.floor(Math.random() * 100), // TODO: Get real risk score
+          lastEvent: wallet.lastChecked ? formatTimeAgo(wallet.lastChecked) : "just added",
+          isPinned: false,
+          chain: "ethereum", // TODO: Detect chain from address
+          type: "wallet" as const,
+          balance: Math.floor(Math.random() * 1000000), // TODO: Get real balance
+          transactionCount: wallet.alertCount || 0,
+          addedAt: wallet.addedAt ? new Date(wallet.addedAt).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
+        }))
+        
+        setWatchlist(convertedWallets)
+      }
+    } catch (error) {
+      console.error("Failed to load monitored wallets:", error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const formatTimeAgo = (timestamp: number) => {
+    const diff = Date.now() - timestamp
+    const minutes = Math.floor(diff / 60000)
+    const hours = Math.floor(diff / 3600000)
+    const days = Math.floor(diff / 86400000)
+    
+    if (days > 0) return `${days}d ago`
+    if (hours > 0) return `${hours}h ago`
+    if (minutes > 0) return `${minutes}m ago`
+    return "just now"
+  }
+
+  // Save watchlist to localStorage for offline access
   useEffect(() => {
-    localStorage.setItem("chainsage-watchlist", JSON.stringify(watchlist))
+    if (watchlist.length > 0) {
+      localStorage.setItem("chainsage-watchlist", JSON.stringify(watchlist))
+    }
   }, [watchlist])
 
   const addToWatchlist = async () => {
@@ -111,20 +149,9 @@ export function WatchlistManagement() {
       // Start monitoring the wallet in the backend
       await apiService.startWalletMonitoring(newItem.address, 1000)
 
-      const newWatchlistItem: WatchlistItem = {
-        id: `w_${Date.now()}`,
-        label: newItem.label,
-        address: newItem.address,
-        riskScore: Math.floor(Math.random() * 100),
-        lastEvent: "just added",
-        chain: newItem.chain,
-        type: newItem.type,
-        balance: newItem.type === "wallet" ? Math.floor(Math.random() * 1000000) : undefined,
-        transactionCount: Math.floor(Math.random() * 5000),
-        addedAt: new Date().toISOString().split("T")[0],
-      }
-
-      setWatchlist((prev) => [newWatchlistItem, ...prev])
+      // Reload the entire watchlist from the backend to ensure sync
+      await loadMonitoredWallets()
+      
       setNewItem({ label: "", address: "", type: "wallet", chain: "ethereum" })
       setIsAddModalOpen(false)
     } catch (error) {
@@ -138,12 +165,13 @@ export function WatchlistManagement() {
       try {
         // Stop monitoring in the backend
         await apiService.stopWalletMonitoring(item.address)
+        
+        // Reload the entire watchlist from the backend to ensure sync
+        await loadMonitoredWallets()
       } catch (error) {
         console.error('Failed to stop monitoring:', error)
       }
     }
-    
-    setWatchlist((prev) => prev.filter((item) => item.id !== id))
   }
 
   const togglePin = (id: string) => {
@@ -321,7 +349,13 @@ export function WatchlistManagement() {
         </div>
       </CardHeader>
       <CardContent>
-        {filteredWatchlist.length === 0 ? (
+        {isLoading ? (
+          <div className="text-center py-12">
+            <div className="animate-spin h-12 w-12 border-4 border-cyber-cyan/20 border-t-cyber-cyan rounded-full mx-auto mb-4"></div>
+            <h3 className="text-lg font-semibold text-white mb-2">Loading monitored wallets...</h3>
+            <p className="text-gray-400">Fetching data from 0G Storage</p>
+          </div>
+        ) : filteredWatchlist.length === 0 ? (
           <div className="text-center py-12">
             <Activity className="h-12 w-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-white mb-2">No items in watchlist</h3>
