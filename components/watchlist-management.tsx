@@ -97,22 +97,48 @@ export function WatchlistManagement() {
     try {
       setIsLoading(true)
       const response = await apiService.getMonitoredWallets()
+      console.log('response', response)
       
       if (response.data && response.data.wallets) {
-        // Convert backend wallet data to watchlist format
-        const convertedWallets = response.data.wallets.map((wallet: any) => ({
-          id: wallet.address,
-          label: `Wallet ${wallet.address.slice(0, 8)}...`,
-          address: wallet.address,
-          riskScore: Math.floor(Math.random() * 100), // TODO: Get real risk score
-          lastEvent: wallet.lastChecked ? formatTimeAgo(wallet.lastChecked) : "just added",
-          isPinned: false,
-          chain: "ethereum", // TODO: Detect chain from address
-          type: "wallet" as const,
-          balance: Math.floor(Math.random() * 1000000), // TODO: Get real balance
-          transactionCount: wallet.alertCount || 0,
-          addedAt: wallet.addedAt ? new Date(wallet.addedAt).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
-        }))
+        // Convert backend wallet data to watchlist format and analyze each wallet
+        const convertedWallets = await Promise.all(
+          response.data.wallets.map(async (wallet: any) => {
+            let riskScore = wallet.riskScore || 75; // Default to high risk if not available;
+            
+            try {
+              // Get real risk analysis from backend
+              const analysisResponse = await apiService.analyzeWallet(wallet.address)
+              if (analysisResponse.data && analysisResponse.data.analysis) {
+                const analysis = analysisResponse.data.analysis
+                // Convert risk level to numeric score
+                switch (analysis.riskLevel) {
+                  case 'critical': riskScore >= 90; break;
+                  case 'high': riskScore >= 75 && riskScore < 90; break;
+                  case 'medium': riskScore >= 50 && riskScore < 75; break;
+                  case 'low': riskScore >= 25 && riskScore < 50; break;
+                  default: riskScore = Math.floor((analysis.confidence || 0.5) * 100);
+                }
+              }
+            } catch (error) {
+              console.warn(`Failed to analyze wallet ${wallet.address}:`, error)
+              // Keep default risk score
+            }
+            
+            return {
+              id: wallet.address,
+              label: `Wallet ${wallet.address.slice(0, 8)}...`,
+              address: wallet.address,
+              riskScore,
+              lastEvent: wallet.lastChecked ? formatTimeAgo(wallet.lastChecked) : "just added",
+              isPinned: false,
+              chain: "ethereum", // TODO: Detect chain from address
+              type: "wallet" as const,
+              balance: Math.floor(Math.random() * 1000000), // TODO: Get real balance
+              transactionCount: wallet.alertCount || 0,
+              addedAt: wallet.addedAt ? new Date(wallet.addedAt).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
+            }
+          })
+        )
         
         setWatchlist(convertedWallets)
       }

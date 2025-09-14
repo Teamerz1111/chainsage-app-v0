@@ -120,7 +120,8 @@ export function AdminDashboard() {
             value: wallet.address,
             threshold: wallet.threshold,
             status: wallet.status,
-            addedAt: wallet.addedAt
+            addedAt: wallet.addedAt,
+            riskScore: wallet.riskScore || 25 // Default to low risk if not analyzed
           }))
         }))
       }
