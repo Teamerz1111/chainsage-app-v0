@@ -131,10 +131,10 @@ class ApiService {
     })
   }
 
-  async startWalletMonitoring(address: string, threshold = 1000) {
+  async startWalletMonitoring(address: string, threshold = 1000, type = 'wallet', chainId = '1') {
     return this.makeRequest(`/api/wallet/monitor/${address}`, {
       method: 'POST',
-      body: JSON.stringify({ threshold }),
+      body: JSON.stringify({ threshold, type, chainId }),
     })
   }
 
@@ -161,6 +161,13 @@ class ApiService {
 
   async syncWalletsTo0G() {
     return this.makeRequest('/api/wallet/sync-to-0g', {
+      method: 'POST',
+    })
+  }
+
+  // Test endpoint to generate sample activity data
+  async generateTestActivity() {
+    return this.makeRequest('/api/wallet/test/generate-activity', {
       method: 'POST',
     })
   }
@@ -240,6 +247,22 @@ class ApiService {
 
   async getAuditTrail(riskId: string) {
     return this.makeRequest(`/api/risk/audit-trail/${riskId}`)
+  }
+
+  // Blockchain activity endpoints
+  async getWalletActivity(address: string, limit = 20, type = 'all') {
+    const params = new URLSearchParams({ limit: limit.toString(), type })
+    return this.makeRequest(`/api/wallet/activity/${address}?${params}`)
+  }
+
+  async getActivityFeed(limit = 50, chainId?: string) {
+    const params = new URLSearchParams({ limit: limit.toString() })
+    if (chainId) params.append('chainId', chainId)
+    return this.makeRequest(`/api/wallet/activity-feed?${params}`)
+  }
+
+  async getWalletBalance(address: string) {
+    return this.makeRequest(`/api/wallet/balance/${address}`)
   }
 }
 
