@@ -48,11 +48,20 @@ import {
   Loader2,
   AlertCircle,
   CheckCircle,
+  ArrowUpRight,
+  ArrowDownLeft,
+  Coins,
+  FileImage,
+  GitBranch,
+  Hash,
+  ExternalLink,
 } from "lucide-react"
 import { WatchlistManagement } from "@/components/watchlist-management"
 import Link from "next/link"
 import { useState, useEffect } from "react"
 import { apiService } from "@/lib/api"
+import { wsService } from "@/lib/websocket"
+import { cn } from "@/lib/utils"
 
 export function AdminDashboard() {
   const { address } = useWallet()
@@ -77,12 +86,25 @@ export function AdminDashboard() {
   const [thresholds, setThresholds] = useState({
     priceChange: 10,
     volumeChange: 50,
-    transactionAmount: 1000
+    transactionAmount: 1000,
+    tokenAmount: 1000
   })
   const [notifications, setNotifications] = useState({
     email: true,
     telegram: false,
-    discord: true
+    discord: true,
+    largeTransaction: true,
+    unusualActivity: true,
+    highFrequency: false,
+    tokenTransfer: true,
+    newContract: false,
+    failedTx: true,
+    riskLevels: {
+      low: false,
+      medium: true,
+      high: true,
+      critical: true
+    }
   })
   const [newWatchlistItem, setNewWatchlistItem] = useState({
     type: 'tokens',
@@ -95,10 +117,48 @@ export function AdminDashboard() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [monitoringStatus, setMonitoringStatus] = useState(null)
+  const [activityFeed, setActivityFeed] = useState([])
+  const [isLoadingActivity, setIsLoadingActivity] = useState(false)
   
-  // Load monitoring status on component mount
+  // Activity feed filters
+  const [activityFilters, setActivityFilters] = useState({
+    type: 'all', // all, blockchain_activity, wallet_event, alert
+    activityType: 'all', // all, transaction, token_transfer, nft_transfer, internal_transaction
+    severity: 'all', // all, info, warning, error, critical
+    riskLevel: 'all', // all, low, medium, high, critical
+    timeRange: 'all', // all, 1h, 6h, 24h, 7d
+    searchTerm: ''
+  })
+  
+  // Load monitoring status on component mount and set up WebSocket
   useEffect(() => {
     loadMonitoringStatus()
+    loadActivityFeed()
+    
+    // Connect to WebSocket for real-time updates
+    wsService.connect()
+    
+    // Subscribe to wallet monitoring events
+    const unsubscribeActivity = wsService.subscribe('unusual_activity_detected', (message) => {
+      console.log('Unusual activity detected:', message)
+      // Refresh monitoring status when unusual activity is detected
+      loadMonitoringStatus()
+      setSuccess(`⚠️ Unusual activity detected on wallet ${message.walletAddress}`)
+      setTimeout(() => setSuccess(''), 5000)
+    })
+    
+    const unsubscribeWalletEvents = wsService.subscribe('wallet_monitoring_update', (message) => {
+      console.log('Wallet monitoring update:', message)
+      // Refresh data when wallets are added/removed
+      loadMonitoringStatus()
+      loadActivityFeed()
+    })
+    
+    // Cleanup on unmount
+    return () => {
+      unsubscribeActivity()
+      unsubscribeWalletEvents()
+    }
   }, [])
   
   const loadMonitoringStatus = async () => {
@@ -127,6 +187,133 @@ export function AdminDashboard() {
       }
     } catch (err) {
       console.error('Failed to load monitoring data:', err)
+    }
+  }
+  
+  const loadActivityFeed = async () => {
+    try {
+      setIsLoadingActivity(true)
+      
+      // Load real blockchain activities for all monitored wallets
+      const [activityResponse, walletEventsResponse, alertsResponse] = await Promise.all([
+        apiService.getActivityFeed(30), // Get last 30 blockchain activities
+        apiService.getWalletEvents(10), // Get last 10 wallet events
+        apiService.getAlerts(10) // Get last 10 alerts
+      ])
+      
+      const activityItems = []
+      
+      // Add real blockchain activities
+      if (activityResponse.data && activityResponse.data.activities) {
+        activityResponse.data.activities.forEach(activity => {
+          let title, description, icon
+          
+          switch (activity.type) {
+            case 'transaction':
+              title = 'ETH Transaction'
+              description = `${activity.valueEth} ETH sent from ${formatAddress(activity.from)} to ${formatAddress(activity.to)}`
+              icon = 'transaction'
+              break
+            case 'token_transfer':
+              title = `${activity.tokenSymbol || 'Token'} Transfer`
+              description = `${activity.formattedValue || activity.value} ${activity.tokenSymbol || ''} transferred`
+              icon = 'token'
+              break
+            case 'nft_transfer':
+              title = `${activity.tokenSymbol || 'NFT'} Transfer`
+              description = `NFT #${activity.tokenID} (${activity.tokenName || 'Unknown'}) transferred`
+              icon = 'nft'
+              break
+            case 'internal_transaction':
+              title = 'Internal Transaction'
+              description = `${activity.valueEth} ETH internal transfer`
+              icon = 'internal'
+              break
+            default:
+              title = 'Blockchain Activity'
+              description = 'Unknown activity type'
+              icon = 'unknown'
+          }
+
+          activityItems.push({
+            id: `activity-${activity.hash}-${activity.timestamp}`,
+            type: 'blockchain_activity',
+            activityType: activity.type,
+            title,
+            description,
+            timestamp: activity.timestamp,
+            severity: 'info',
+            hash: activity.hash,
+            from: activity.from,
+            to: activity.to,
+            value: activity.value,
+            valueEth: activity.valueEth,
+            blockNumber: activity.blockNumber,
+            isError: activity.isError,
+            tokenSymbol: activity.tokenSymbol,
+            tokenName: activity.tokenName,
+            contractAddress: activity.contractAddress,
+            monitoredItem: activity.monitoredItem,
+            monitoredType: activity.monitoredType,
+            itemRiskLevel: activity.itemRiskLevel,
+            icon
+          })
+        })
+      }
+      
+      // Add wallet management events
+      if (walletEventsResponse.data && walletEventsResponse.data.events) {
+        walletEventsResponse.data.events.forEach(event => {
+          activityItems.push({
+            id: `event-${event.id || Date.now()}`,
+            type: 'wallet_event',
+            title: `Wallet ${event.data?.payload?.eventType === 'added' ? 'Added' : 'Removed'}`,
+            description: `${formatAddress(event.data?.payload?.walletAddress) || 'Unknown'} ${event.data?.payload?.eventType === 'added' ? 'added to' : 'removed from'} monitoring`,
+            timestamp: event.timestamp || Date.now(),
+            severity: event.data?.payload?.eventType === 'added' ? 'info' : 'warning',
+            walletAddress: event.data?.payload?.walletAddress,
+            metadata: event.data?.payload?.metadata,
+            icon: 'wallet'
+          })
+        })
+      }
+      
+      // Add alerts
+      if (alertsResponse.data && alertsResponse.data.alerts) {
+        alertsResponse.data.alerts.forEach(alert => {
+          activityItems.push({
+            id: `alert-${alert.transactionHash || Date.now()}`,
+            type: 'alert',
+            title: 'Unusual Activity Detected',
+            description: `${alert.classification?.riskLevel || 'Unknown'} risk activity on ${formatAddress(alert.originalTransaction?.from) || 'wallet'}`,
+            timestamp: alert.timestamp || Date.now(),
+            severity: getSeverityFromRisk(alert.classification?.riskLevel),
+            transactionHash: alert.transactionHash,
+            riskLevel: alert.classification?.riskLevel,
+            anomalies: alert.classification?.anomalies,
+            icon: 'alert'
+          })
+        })
+      }
+      
+      // Sort by timestamp (most recent first)
+      activityItems.sort((a, b) => b.timestamp - a.timestamp)
+      
+      setActivityFeed(activityItems)
+    } catch (err) {
+      console.error('Failed to load activity feed:', err)
+    } finally {
+      setIsLoadingActivity(false)
+    }
+  }
+  
+  const getSeverityFromRisk = (riskLevel) => {
+    switch (riskLevel) {
+      case 'critical': return 'critical'
+      case 'high': return 'error'
+      case 'medium': return 'warning'
+      case 'low': return 'info'
+      default: return 'info'
     }
   }
   
@@ -212,9 +399,140 @@ export function AdminDashboard() {
     setError('')
     setSuccess('')
   }
+  
+  const formatTimeAgo = (timestamp) => {
+    const diff = Date.now() - timestamp
+    const minutes = Math.floor(diff / 60000)
+    const hours = Math.floor(diff / 3600000)
+    const days = Math.floor(diff / 86400000)
+    
+    if (days > 0) return `${days}d ago`
+    if (hours > 0) return `${hours}h ago`
+    if (minutes > 0) return `${minutes}m ago`
+    return "just now"
+  }
 
   const formatAddress = (addr: string) => {
     return `${addr.slice(0, 8)}...${addr.slice(-6)}`
+  }
+
+  const getBlockchainActivityIconColor = (activityType: string) => {
+    switch (activityType) {
+      case 'transaction':
+        return "bg-blue-500/20 text-blue-400"
+      case 'token_transfer':
+        return "bg-green-500/20 text-green-400"
+      case 'nft_transfer':
+        return "bg-purple-500/20 text-purple-400"
+      case 'internal_transaction':
+        return "bg-orange-500/20 text-orange-400"
+      default:
+        return "bg-cyber-cyan/20 text-cyber-cyan"
+    }
+  }
+
+  const getActivityIcon = (item: any) => {
+    if (item.type === 'blockchain_activity') {
+      switch (item.activityType) {
+        case 'transaction':
+          return <ArrowUpRight className="w-5 h-5" />
+        case 'token_transfer':
+          return <Coins className="w-5 h-5" />
+        case 'nft_transfer':
+          return <FileImage className="w-5 h-5" />
+        case 'internal_transaction':
+          return <GitBranch className="w-5 h-5" />
+        default:
+          return <Hash className="w-5 h-5" />
+      }
+    } else if (item.type === 'wallet_event') {
+      return <Wallet className="w-5 h-5" />
+    } else if (item.type === 'alert') {
+      return <AlertTriangle className="w-5 h-5" />
+    } else {
+      return <Activity className="w-5 h-5" />
+    }
+  }
+
+  // Filter activity feed based on current filters
+  const getFilteredActivityFeed = () => {
+    let filtered = [...activityFeed]
+
+    // Filter by type
+    if (activityFilters.type !== 'all') {
+      filtered = filtered.filter(item => item.type === activityFilters.type)
+    }
+
+    // Filter by activity type (for blockchain activities)
+    if (activityFilters.activityType !== 'all') {
+      filtered = filtered.filter(item => 
+        item.type !== 'blockchain_activity' || item.activityType === activityFilters.activityType
+      )
+    }
+
+    // Filter by severity
+    if (activityFilters.severity !== 'all') {
+      filtered = filtered.filter(item => item.severity === activityFilters.severity)
+    }
+
+    // Filter by risk level
+    if (activityFilters.riskLevel !== 'all') {
+      filtered = filtered.filter(item => 
+        item.riskLevel === activityFilters.riskLevel || 
+        item.itemRiskLevel === activityFilters.riskLevel
+      )
+    }
+
+    // Filter by time range
+    if (activityFilters.timeRange !== 'all') {
+      const now = Date.now()
+      let timeThreshold = 0
+      
+      switch (activityFilters.timeRange) {
+        case '1h':
+          timeThreshold = now - (60 * 60 * 1000)
+          break
+        case '6h':
+          timeThreshold = now - (6 * 60 * 60 * 1000)
+          break
+        case '24h':
+          timeThreshold = now - (24 * 60 * 60 * 1000)
+          break
+        case '7d':
+          timeThreshold = now - (7 * 24 * 60 * 60 * 1000)
+          break
+      }
+      
+      filtered = filtered.filter(item => item.timestamp >= timeThreshold)
+    }
+
+    // Filter by search term
+    if (activityFilters.searchTerm.trim()) {
+      const searchLower = activityFilters.searchTerm.toLowerCase()
+      filtered = filtered.filter(item => 
+        item.title.toLowerCase().includes(searchLower) ||
+        item.description.toLowerCase().includes(searchLower) ||
+        (item.hash && item.hash.toLowerCase().includes(searchLower)) ||
+        (item.from && item.from.toLowerCase().includes(searchLower)) ||
+        (item.to && item.to.toLowerCase().includes(searchLower)) ||
+        (item.walletAddress && item.walletAddress.toLowerCase().includes(searchLower)) ||
+        (item.tokenSymbol && item.tokenSymbol.toLowerCase().includes(searchLower))
+      )
+    }
+
+    return filtered
+  }
+
+  // Clear all filters
+  const clearAllFilters = () => {
+    setActivityFilters({
+      type: 'all',
+      activityType: 'all', 
+      severity: 'all',
+      riskLevel: 'all',
+      timeRange: 'all',
+      searchTerm: ''
+    })
   }
 
   const handleSendMessage = () => {
@@ -479,28 +797,717 @@ export function AdminDashboard() {
 
               {/* Activity Section */}
               {activeSection === "activity" && (
-                <Card className="bg-cyber-dark/50 border-cyber-cyan/20">
-                  <CardHeader>
-                    <CardTitle className="text-white">Activity Feed</CardTitle>
-                    <CardDescription>Recent blockchain activity and transactions</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-gray-400">Activity feed integration coming soon...</p>
-                  </CardContent>
-                </Card>
+                <div className="space-y-6">
+                  <Card className="bg-cyber-dark/50 border-cyber-cyan/20">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-white">
+                        <Activity className="w-5 h-5 text-cyber-cyan" />
+                        Activity Feed
+                      </CardTitle>
+                      <CardDescription>Real-time monitoring events and alerts from 0G Storage</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      {/* Activity Feed Filters */}
+                      <div className="mb-6 space-y-4">
+                        <div className="flex flex-col sm:flex-row gap-4">
+                          {/* Search Input */}
+                          <div className="flex-1">
+                            <Input
+                              placeholder="Search activities, addresses, hashes..."
+                              value={activityFilters.searchTerm}
+                              onChange={(e) => setActivityFilters(prev => ({ ...prev, searchTerm: e.target.value }))}
+                              className="bg-cyber-dark/30 border-cyber-cyan/30 text-white placeholder-gray-400"
+                            />
+                          </div>
+                          
+                          {/* Clear Filters Button */}
+                          <Button
+                            onClick={clearAllFilters}
+                            variant="outline"
+                            className="border-gray-600 text-gray-300 hover:bg-gray-800"
+                          >
+                            <X className="w-4 h-4 mr-2" />
+                            Clear Filters
+                          </Button>
+                        </div>
+                        
+                        {/* Filter Controls Grid */}
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+                          {/* Activity Type Filter */}
+                          <div className="space-y-1">
+                            <Label className="text-xs text-gray-400">Type</Label>
+                            <Select value={activityFilters.type} onValueChange={(value) => setActivityFilters(prev => ({ ...prev, type: value }))}>
+                              <SelectTrigger className="bg-cyber-dark/30 border-cyber-cyan/30 text-white text-sm">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent className="bg-cyber-dark border-cyber-cyan/30">
+                                <SelectItem value="all">All Types</SelectItem>
+                                <SelectItem value="blockchain_activity">Blockchain</SelectItem>
+                                <SelectItem value="wallet_event">Wallet Events</SelectItem>
+                                <SelectItem value="alert">Alerts</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          
+                          {/* Blockchain Activity Type Filter */}
+                          <div className="space-y-1">
+                            <Label className="text-xs text-gray-400">Activity</Label>
+                            <Select 
+                              value={activityFilters.activityType} 
+                              onValueChange={(value) => setActivityFilters(prev => ({ ...prev, activityType: value }))}
+                              disabled={activityFilters.type !== 'all' && activityFilters.type !== 'blockchain_activity'}
+                            >
+                              <SelectTrigger className="bg-cyber-dark/30 border-cyber-cyan/30 text-white text-sm">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent className="bg-cyber-dark border-cyber-cyan/30">
+                                <SelectItem value="all">All Activities</SelectItem>
+                                <SelectItem value="transaction">Transactions</SelectItem>
+                                <SelectItem value="token_transfer">Token Transfers</SelectItem>
+                                <SelectItem value="nft_transfer">NFT Transfers</SelectItem>
+                                <SelectItem value="internal_transaction">Internal Txs</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          
+                          {/* Severity Filter */}
+                          <div className="space-y-1">
+                            <Label className="text-xs text-gray-400">Severity</Label>
+                            <Select value={activityFilters.severity} onValueChange={(value) => setActivityFilters(prev => ({ ...prev, severity: value }))}>
+                              <SelectTrigger className="bg-cyber-dark/30 border-cyber-cyan/30 text-white text-sm">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent className="bg-cyber-dark border-cyber-cyan/30">
+                                <SelectItem value="all">All Severities</SelectItem>
+                                <SelectItem value="info">Info</SelectItem>
+                                <SelectItem value="warning">Warning</SelectItem>
+                                <SelectItem value="error">Error</SelectItem>
+                                <SelectItem value="critical">Critical</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          
+                          {/* Risk Level Filter */}
+                          <div className="space-y-1">
+                            <Label className="text-xs text-gray-400">Risk Level</Label>
+                            <Select value={activityFilters.riskLevel} onValueChange={(value) => setActivityFilters(prev => ({ ...prev, riskLevel: value }))}>
+                              <SelectTrigger className="bg-cyber-dark/30 border-cyber-cyan/30 text-white text-sm">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent className="bg-cyber-dark border-cyber-cyan/30">
+                                <SelectItem value="all">All Risk Levels</SelectItem>
+                                <SelectItem value="low">Low Risk</SelectItem>
+                                <SelectItem value="medium">Medium Risk</SelectItem>
+                                <SelectItem value="high">High Risk</SelectItem>
+                                <SelectItem value="critical">Critical Risk</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          
+                          {/* Time Range Filter */}
+                          <div className="space-y-1">
+                            <Label className="text-xs text-gray-400">Time Range</Label>
+                            <Select value={activityFilters.timeRange} onValueChange={(value) => setActivityFilters(prev => ({ ...prev, timeRange: value }))}>
+                              <SelectTrigger className="bg-cyber-dark/30 border-cyber-cyan/30 text-white text-sm">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent className="bg-cyber-dark border-cyber-cyan/30">
+                                <SelectItem value="all">All Time</SelectItem>
+                                <SelectItem value="1h">Last Hour</SelectItem>
+                                <SelectItem value="6h">Last 6 Hours</SelectItem>
+                                <SelectItem value="24h">Last 24 Hours</SelectItem>
+                                <SelectItem value="7d">Last 7 Days</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                        
+                        {/* Active Filter Count */}
+                        {(() => {
+                          const activeFilterCount = Object.values(activityFilters).filter(
+                            (value, index) => index < 5 && value !== 'all'
+                          ).length + (activityFilters.searchTerm.trim() ? 1 : 0)
+                          
+                          return activeFilterCount > 0 ? (
+                            <div className="flex items-center gap-2 text-sm">
+                              <Badge variant="outline" className="border-cyber-cyan/30 text-cyber-cyan">
+                                {activeFilterCount} filter{activeFilterCount > 1 ? 's' : ''} active
+                              </Badge>
+                              <span className="text-gray-400">
+                                Showing {getFilteredActivityFeed().length} of {activityFeed.length} activities
+                              </span>
+                            </div>
+                          ) : null
+                        })()}
+                      </div>
+                      {isLoadingActivity ? (
+                        <div className="flex items-center justify-center py-8">
+                          <div className="animate-spin h-8 w-8 border-4 border-cyber-cyan/20 border-t-cyber-cyan rounded-full"></div>
+                          <span className="ml-3 text-gray-400">Loading activity feed...</span>
+                        </div>
+                      ) : (() => {
+                        const filteredActivities = getFilteredActivityFeed()
+                        
+                        if (activityFeed.length === 0) {
+                          return (
+                            <div className="text-center py-8">
+                              <Activity className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                              <h3 className="text-lg font-medium text-white mb-2">No Recent Activity</h3>
+                              <p className="text-gray-400">Add wallets to monitoring to see activity events</p>
+                            </div>
+                          )
+                        }
+                        
+                        if (filteredActivities.length === 0) {
+                          return (
+                            <div className="text-center py-8">
+                              <Activity className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                              <h3 className="text-lg font-medium text-white mb-2">No Activities Match Filters</h3>
+                              <p className="text-gray-400">Try adjusting your filters to see more results</p>
+                              <Button 
+                                onClick={clearAllFilters}
+                                className="mt-4 bg-cyber-cyan/20 border border-cyber-cyan/30 text-cyber-cyan hover:bg-cyber-cyan/30"
+                              >
+                                Clear All Filters
+                              </Button>
+                            </div>
+                          )
+                        }
+                        
+                        return (
+                          <div className="space-y-4 max-h-96 overflow-y-auto">
+                            {filteredActivities.map((item) => (
+                            <div
+                              key={item.id}
+                              className="flex items-start gap-4 p-4 rounded-lg border border-cyber-cyan/10 bg-cyber-dark/30 hover:bg-cyber-dark/50 transition-colors"
+                            >
+                              {/* Activity Icon */}
+                              <div className={cn(
+                                "flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center",
+                                item.severity === 'critical' && "bg-red-500/20 text-red-400",
+                                item.severity === 'error' && "bg-red-500/20 text-red-400",
+                                item.severity === 'warning' && "bg-amber-500/20 text-amber-400",
+                                item.severity === 'info' && "bg-cyber-cyan/20 text-cyber-cyan",
+                                item.type === 'blockchain_activity' && getBlockchainActivityIconColor(item.activityType),
+                                !item.severity && "bg-gray-500/20 text-gray-400"
+                              )}>
+                                {getActivityIcon(item)}
+                              </div>
+                              
+                              {/* Activity Content */}
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-start justify-between">
+                                  <div>
+                                    <h4 className="text-sm font-medium text-white">{item.title}</h4>
+                                    <p className="text-sm text-gray-400 mt-1">{item.description}</p>
+                                    
+                                    {/* Additional Details */}
+                                    {item.type === 'blockchain_activity' && (
+                                      <div className="mt-2 space-y-2">
+                                        {/* Transaction Hash */}
+                                        {item.hash && (
+                                          <div className="flex items-center gap-2">
+                                            <Badge variant="outline" className="text-xs border-gray-500/30 text-gray-300 font-mono">
+                                              {formatAddress(item.hash)}
+                                            </Badge>
+                                            <ExternalLink className="w-3 h-3 text-gray-400 hover:text-cyber-cyan cursor-pointer" 
+                                              onClick={() => window.open(`https://etherscan.io/tx/${item.hash}`, '_blank')} />
+                                          </div>
+                                        )}
+                                        
+                                        {/* From/To addresses for transactions */}
+                                        {(item.from || item.to) && (
+                                          <div className="flex items-center gap-2 text-xs">
+                                            {item.from && (
+                                              <>
+                                                <span className="text-gray-500">From:</span>
+                                                <Badge variant="outline" className="text-xs border-blue-500/30 text-blue-400">
+                                                  {formatAddress(item.from)}
+                                                </Badge>
+                                              </>
+                                            )}
+                                            {item.from && item.to && <ArrowUpRight className="w-3 h-3 text-gray-500" />}
+                                            {item.to && (
+                                              <>
+                                                <span className="text-gray-500">To:</span>
+                                                <Badge variant="outline" className="text-xs border-green-500/30 text-green-400">
+                                                  {formatAddress(item.to)}
+                                                </Badge>
+                                              </>
+                                            )}
+                                          </div>
+                                        )}
+                                        
+                                        {/* Token/Contract Info */}
+                                        {item.contractAddress && (
+                                          <div className="flex items-center gap-2">
+                                            <span className="text-xs text-gray-500">Contract:</span>
+                                            <Badge variant="outline" className="text-xs border-purple-500/30 text-purple-400">
+                                              {formatAddress(item.contractAddress)}
+                                            </Badge>
+                                          </div>
+                                        )}
+                                        
+                                        {/* Monitored Item */}
+                                        {item.monitoredItem && (
+                                          <div className="flex items-center gap-2">
+                                            <span className="text-xs text-gray-500">
+                                              Monitored {item.monitoredType || 'Item'}:
+                                            </span>
+                                            <Badge variant="outline" className="text-xs border-cyber-cyan/30 text-cyber-cyan">
+                                              {formatAddress(item.monitoredItem)}
+                                            </Badge>
+                                            {item.monitoredType && (
+                                              <Badge className={cn(
+                                                "text-xs capitalize",
+                                                item.monitoredType === 'token' && "bg-green-500/20 text-green-400 border-green-500/30",
+                                                item.monitoredType === 'wallet' && "bg-cyan-500/20 text-cyan-400 border-cyan-500/30",
+                                                item.monitoredType === 'contract' && "bg-purple-500/20 text-purple-400 border-purple-500/30",
+                                                item.monitoredType === 'project' && "bg-orange-500/20 text-orange-400 border-orange-500/30"
+                                              )}>
+                                                {item.monitoredType === 'token' ? 'ERC-20' : item.monitoredType}
+                                              </Badge>
+                                            )}
+                                            {item.itemRiskLevel && (
+                                              <Badge className={cn(
+                                                "text-xs",
+                                                item.itemRiskLevel === 'critical' && "bg-red-500/20 text-red-400 border-red-500/30",
+                                                item.itemRiskLevel === 'high' && "bg-orange-500/20 text-orange-400 border-orange-500/30",
+                                                item.itemRiskLevel === 'medium' && "bg-amber-500/20 text-amber-400 border-amber-500/30",
+                                                item.itemRiskLevel === 'low' && "bg-green-500/20 text-green-400 border-green-500/30"
+                                              )}>
+                                                {item.itemRiskLevel.toUpperCase()}
+                                              </Badge>
+                                            )}
+                                          </div>
+                                        )}
+                                        
+                                        {/* Block Number */}
+                                        {item.blockNumber && (
+                                          <div className="flex items-center gap-2">
+                                            <span className="text-xs text-gray-500">Block:</span>
+                                            <Badge variant="outline" className="text-xs border-gray-500/30 text-gray-400">
+                                              #{item.blockNumber.toLocaleString()}
+                                            </Badge>
+                                          </div>
+                                        )}
+                                      </div>
+                                    )}
+                                    
+                                    {/* Wallet Event Details */}
+                                    {item.type === 'wallet_event' && item.walletAddress && (
+                                      <div className="mt-2 flex items-center gap-2">
+                                        <Badge variant="outline" className="text-xs border-cyber-cyan/30 text-cyber-cyan">
+                                          {formatAddress(item.walletAddress)}
+                                        </Badge>
+                                      </div>
+                                    )}
+                                    
+                                    {/* Alert Anomalies */}
+                                    {item.anomalies && item.anomalies.length > 0 && (
+                                      <div className="mt-2 flex flex-wrap gap-1">
+                                        {item.anomalies.map((anomaly, index) => (
+                                          <Badge key={index} variant="outline" className="text-xs border-amber-400/30 text-amber-400">
+                                            {anomaly}
+                                          </Badge>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                  
+                                  <div className="flex flex-col items-end text-right">
+                                    <span className="text-xs text-gray-500">
+                                      {formatTimeAgo(item.timestamp)}
+                                    </span>
+                                    {item.riskLevel && (
+                                      <Badge className={cn(
+                                        "text-xs mt-1",
+                                        item.riskLevel === 'critical' && "bg-red-500/20 text-red-400 border-red-500/30",
+                                        item.riskLevel === 'high' && "bg-orange-500/20 text-orange-400 border-orange-500/30",
+                                        item.riskLevel === 'medium' && "bg-amber-500/20 text-amber-400 border-amber-500/30",
+                                        item.riskLevel === 'low' && "bg-green-500/20 text-green-400 border-green-500/30"
+                                      )}>
+                                        {item.riskLevel.toUpperCase()}
+                                      </Badge>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                            ))}
+                          </div>
+                        )
+                      })()}
+                      
+                      {/* Action Buttons */}
+                      <div className="flex justify-center gap-4 pt-4 border-t border-cyber-cyan/20 mt-6">
+                        <Button
+                          onClick={loadActivityFeed}
+                          disabled={isLoadingActivity}
+                          className="bg-cyber-cyan/20 border border-cyber-cyan/30 text-cyber-cyan hover:bg-cyber-cyan/30"
+                        >
+                          {isLoadingActivity ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              Refreshing...
+                            </>
+                          ) : (
+                            'Refresh Activity'
+                          )}
+                        </Button>
+                        
+                        {process.env.NODE_ENV !== 'production' && (
+                          <Button
+                            onClick={async () => {
+                              try {
+                                setIsLoadingActivity(true)
+                                const response = await apiService.generateTestActivity()
+                                if (response.data) {
+                                  setSuccess(`✅ Generated ${response.data.eventsCreated} test activity events`)
+                                  setTimeout(() => setSuccess(''), 3000)
+                                  // Reload activity feed to show new data
+                                  await loadActivityFeed()
+                                }
+                              } catch (err) {
+                                setError('Failed to generate test activity data')
+                                setTimeout(() => setError(''), 3000)
+                              } finally {
+                                setIsLoadingActivity(false)
+                              }
+                            }}
+                            disabled={isLoadingActivity}
+                            className="bg-amber-500/20 border border-amber-500/30 text-amber-400 hover:bg-amber-500/30"
+                          >
+                            {isLoadingActivity ? (
+                              <>
+                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                Generating...
+                              </>
+                            ) : (
+                              'Generate Test Data'
+                            )}
+                          </Button>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
               )}
 
               {/* Alerts Section */}
               {activeSection === "alerts" && (
-                <Card className="bg-cyber-dark/50 border-cyber-cyan/20">
-                  <CardHeader>
-                    <CardTitle className="text-white">Alert Configuration</CardTitle>
-                    <CardDescription>Manage your notification settings</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-gray-400">Alert configuration panel coming soon...</p>
-                  </CardContent>
-                </Card>
+                <div className="space-y-6">
+                  {/* Alert Rules Configuration */}
+                  <Card className="bg-cyber-dark/50 border-cyber-cyan/20">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-white">
+                        <AlertTriangle className="w-5 h-5 text-amber-400" />
+                        Alert Rules Configuration
+                      </CardTitle>
+                      <CardDescription>Configure automated alert triggers for blockchain activities</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                      {/* Alert Rule Categories */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* Transaction Alerts */}
+                        <div className="space-y-4">
+                          <h3 className="text-lg font-medium text-white border-b border-cyber-cyan/20 pb-2">
+                            Transaction Alerts
+                          </h3>
+                          
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between p-3 bg-cyber-dark/30 rounded border border-cyber-cyan/10">
+                              <div>
+                                <Label className="text-white">Large Transaction Alert</Label>
+                                <p className="text-xs text-gray-400">Alert when transaction exceeds threshold</p>
+                              </div>
+                              <Switch
+                                checked={notifications.largeTransaction}
+                                onCheckedChange={(checked) => setNotifications(prev => ({ ...prev, largeTransaction: checked }))}
+                              />
+                            </div>
+                            
+                            <div className="flex items-center gap-2">
+                              <Label className="text-white text-sm">Threshold ($):</Label>
+                              <Input
+                                type="number"
+                                value={thresholds.transactionAmount}
+                                onChange={(e) => setThresholds(prev => ({ ...prev, transactionAmount: Number(e.target.value) }))}
+                                className="w-32 bg-cyber-dark/30 border-cyber-cyan/30 text-white"
+                                placeholder="10000"
+                              />
+                            </div>
+                            
+                            <div className="flex items-center justify-between p-3 bg-cyber-dark/30 rounded border border-cyber-cyan/10">
+                              <div>
+                                <Label className="text-white">Unusual Activity Pattern</Label>
+                                <p className="text-xs text-gray-400">AI-detected anomalous behavior</p>
+                              </div>
+                              <Switch
+                                checked={notifications.unusualActivity}
+                                onCheckedChange={(checked) => setNotifications(prev => ({ ...prev, unusualActivity: checked }))}
+                              />
+                            </div>
+                            
+                            <div className="flex items-center justify-between p-3 bg-cyber-dark/30 rounded border border-cyber-cyan/10">
+                              <div>
+                                <Label className="text-white">High Frequency Trading</Label>
+                                <p className="text-xs text-gray-400">Multiple transactions in short time</p>
+                              </div>
+                              <Switch
+                                checked={notifications.highFrequency}
+                                onCheckedChange={(checked) => setNotifications(prev => ({ ...prev, highFrequency: checked }))}
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Token & Contract Alerts */}
+                        <div className="space-y-4">
+                          <h3 className="text-lg font-medium text-white border-b border-cyber-cyan/20 pb-2">
+                            Token & Contract Alerts
+                          </h3>
+                          
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between p-3 bg-cyber-dark/30 rounded border border-cyber-cyan/10">
+                              <div>
+                                <Label className="text-white">Token Transfer Alert</Label>
+                                <p className="text-xs text-gray-400">Alert on monitored token movements</p>
+                              </div>
+                              <Switch
+                                checked={notifications.tokenTransfer}
+                                onCheckedChange={(checked) => setNotifications(prev => ({ ...prev, tokenTransfer: checked }))}
+                              />
+                            </div>
+                            
+                            <div className="flex items-center gap-2">
+                              <Label className="text-white text-sm">Min Amount:</Label>
+                              <Input
+                                type="number"
+                                value={thresholds.tokenAmount}
+                                onChange={(e) => setThresholds(prev => ({ ...prev, tokenAmount: Number(e.target.value) }))}
+                                className="w-32 bg-cyber-dark/30 border-cyber-cyan/30 text-white"
+                                placeholder="1000"
+                              />
+                            </div>
+                            
+                            <div className="flex items-center justify-between p-3 bg-cyber-dark/30 rounded border border-cyber-cyan/10">
+                              <div>
+                                <Label className="text-white">New Contract Interaction</Label>
+                                <p className="text-xs text-gray-400">First-time contract interactions</p>
+                              </div>
+                              <Switch
+                                checked={notifications.newContract}
+                                onCheckedChange={(checked) => setNotifications(prev => ({ ...prev, newContract: checked }))}
+                              />
+                            </div>
+                            
+                            <div className="flex items-center justify-between p-3 bg-cyber-dark/30 rounded border border-cyber-cyan/10">
+                              <div>
+                                <Label className="text-white">Failed Transactions</Label>
+                                <p className="text-xs text-gray-400">Alert on transaction failures</p>
+                              </div>
+                              <Switch
+                                checked={notifications.failedTx}
+                                onCheckedChange={(checked) => setNotifications(prev => ({ ...prev, failedTx: checked }))}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Risk Level Filters */}
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-medium text-white border-b border-cyber-cyan/20 pb-2">
+                          Risk Level Filtering
+                        </h3>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                          {['low', 'medium', 'high', 'critical'].map((risk) => (
+                            <div key={risk} className="flex items-center justify-between p-3 bg-cyber-dark/30 rounded border border-cyber-cyan/10">
+                              <Label className={cn(
+                                "capitalize font-medium",
+                                risk === 'low' && "text-green-400",
+                                risk === 'medium' && "text-amber-400", 
+                                risk === 'high' && "text-orange-400",
+                                risk === 'critical' && "text-red-400"
+                              )}>{risk} Risk</Label>
+                              <Switch
+                                checked={notifications.riskLevels?.[risk] || false}
+                                onCheckedChange={(checked) => setNotifications(prev => ({
+                                  ...prev,
+                                  riskLevels: { ...prev.riskLevels, [risk]: checked }
+                                }))}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Active Alerts Management */}
+                  <Card className="bg-cyber-dark/50 border-cyber-cyan/20">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-white">
+                        <Bell className="w-5 h-5 text-cyber-green" />
+                        Active Alerts
+                      </CardTitle>
+                      <CardDescription>View and manage currently active alerts</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      {isLoadingActivity ? (
+                        <div className="flex items-center justify-center py-8">
+                          <div className="animate-spin h-8 w-8 border-4 border-cyber-cyan/20 border-t-cyber-cyan rounded-full"></div>
+                          <span className="ml-3 text-gray-400">Loading active alerts...</span>
+                        </div>
+                      ) : (
+                        <div className="space-y-4 max-h-64 overflow-y-auto">
+                          {getFilteredActivityFeed().filter(item => item.type === 'alert').slice(0, 5).map((alert) => (
+                            <div
+                              key={alert.id}
+                              className="flex items-center justify-between p-4 rounded-lg border border-red-500/20 bg-red-500/5"
+                            >
+                              <div className="flex items-center gap-3">
+                                <AlertTriangle className="w-5 h-5 text-red-400" />
+                                <div>
+                                  <h4 className="text-sm font-medium text-white">{alert.title}</h4>
+                                  <p className="text-xs text-gray-400">{alert.description}</p>
+                                  <span className="text-xs text-gray-500">{formatTimeAgo(alert.timestamp)}</span>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                {alert.riskLevel && (
+                                  <Badge className={cn(
+                                    "text-xs",
+                                    alert.riskLevel === 'critical' && "bg-red-500/20 text-red-400 border-red-500/30",
+                                    alert.riskLevel === 'high' && "bg-orange-500/20 text-orange-400 border-orange-500/30",
+                                    alert.riskLevel === 'medium' && "bg-amber-500/20 text-amber-400 border-amber-500/30",
+                                    alert.riskLevel === 'low' && "bg-green-500/20 text-green-400 border-green-500/30"
+                                  )}>
+                                    {alert.riskLevel.toUpperCase()}
+                                  </Badge>
+                                )}
+                                <Button variant="outline" size="sm" className="text-xs border-gray-600 text-gray-300 hover:bg-gray-800">
+                                  Dismiss
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
+                          
+                          {getFilteredActivityFeed().filter(item => item.type === 'alert').length === 0 && (
+                            <div className="text-center py-8">
+                              <CheckCircle className="w-12 h-12 text-green-400 mx-auto mb-4" />
+                              <h3 className="text-lg font-medium text-white mb-2">No Active Alerts</h3>
+                              <p className="text-gray-400">All systems running normally</p>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  {/* Alert History */}
+                  <Card className="bg-cyber-dark/50 border-cyber-cyan/20">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-white">
+                        <BarChart3 className="w-5 h-5 text-purple-400" />
+                        Alert Statistics
+                      </CardTitle>
+                      <CardDescription>Alert frequency and patterns over time</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="p-4 bg-cyber-dark/30 rounded border border-cyber-cyan/10 text-center">
+                          <div className="text-2xl font-bold text-cyber-cyan">
+                            {getFilteredActivityFeed().filter(item => item.type === 'alert').length}
+                          </div>
+                          <div className="text-sm text-gray-400">Total Alerts</div>
+                        </div>
+                        
+                        <div className="p-4 bg-cyber-dark/30 rounded border border-cyber-cyan/10 text-center">
+                          <div className="text-2xl font-bold text-red-400">
+                            {getFilteredActivityFeed().filter(item => item.type === 'alert' && item.riskLevel === 'critical').length}
+                          </div>
+                          <div className="text-sm text-gray-400">Critical Alerts</div>
+                        </div>
+                        
+                        <div className="p-4 bg-cyber-dark/30 rounded border border-cyber-cyan/10 text-center">
+                          <div className="text-2xl font-bold text-green-400">
+                            {monitoringStatus?.totalMonitored || 0}
+                          </div>
+                          <div className="text-sm text-gray-400">Monitored Items</div>
+                        </div>
+                        
+                        <div className="p-4 bg-cyber-dark/30 rounded border border-cyber-cyan/10 text-center">
+                          <div className="text-2xl font-bold text-amber-400">
+                            {getFilteredActivityFeed().filter(item => 
+                              item.type === 'alert' && 
+                              item.timestamp > Date.now() - 24 * 60 * 60 * 1000
+                            ).length}
+                          </div>
+                          <div className="text-sm text-gray-400">Last 24h</div>
+                        </div>
+                      </div>
+                      
+                      {/* Action Buttons */}
+                      <div className="flex justify-center gap-4 pt-6 border-t border-cyber-cyan/20 mt-6">
+                        <Button
+                          onClick={() => {
+                            setSuccess('✅ Alert settings saved successfully')
+                            setTimeout(() => setSuccess(''), 3000)
+                          }}
+                          className="bg-cyber-green/20 border border-cyber-green/30 text-cyber-green hover:bg-cyber-green/30"
+                        >
+                          <CheckCircle className="w-4 h-4 mr-2" />
+                          Save Alert Settings
+                        </Button>
+                        
+                        <Button
+                          onClick={loadActivityFeed}
+                          disabled={isLoadingActivity}
+                          variant="outline"
+                          className="border-cyber-cyan/30 text-cyber-cyan hover:bg-cyber-cyan/10"
+                        >
+                          {isLoadingActivity ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              Refreshing...
+                            </>
+                          ) : (
+                            <>
+                              <Activity className="w-4 h-4 mr-2" />
+                              Refresh Alerts
+                            </>
+                          )}
+                        </Button>
+                        
+                        <Button
+                          onClick={() => {
+                            setNotifications({
+                              email: false,
+                              telegram: false,
+                              discord: false,
+                              largeTransaction: false,
+                              unusualActivity: false,
+                              highFrequency: false,
+                              tokenTransfer: false,
+                              newContract: false,
+                              failedTx: false,
+                              riskLevels: { low: false, medium: false, high: false, critical: false }
+                            })
+                            setSuccess('🔕 All alerts disabled')
+                            setTimeout(() => setSuccess(''), 3000)
+                          }}
+                          variant="outline"
+                          className="border-red-500/30 text-red-400 hover:bg-red-500/10"
+                        >
+                          <X className="w-4 h-4 mr-2" />
+                          Disable All
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
               )}
 
               {/* Analytics Section */}

@@ -7,9 +7,10 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Plus, Pin, Trash2, Activity, AlertTriangle, CheckCircle, Clock, ExternalLink } from "lucide-react"
+import { Plus, Pin, Trash2, Activity, AlertTriangle, CheckCircle, Clock, ExternalLink, Loader2, BarChart3 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { apiService } from "@/lib/api"
+import { wsService } from "@/lib/websocket"
 
 interface WatchlistItem {
   id: string
@@ -19,7 +20,7 @@ interface WatchlistItem {
   lastEvent: string
   isPinned?: boolean
   chain: string
-  type: "wallet" | "contract" | "project"
+  type: "wallet" | "contract" | "project" | "token"
   // Backend fields
   threshold?: number
   status?: string
@@ -83,17 +84,76 @@ export function WatchlistManagement() {
   const [watchlist, setWatchlist] = useState<WatchlistItem[]>([])
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+  const [analyzingAddress, setAnalyzingAddress] = useState<string | null>(null)
+  const [analysisResults, setAnalysisResults] = useState<any>(null)
+  const [isAnalysisModalOpen, setIsAnalysisModalOpen] = useState(false)
   const [newItem, setNewItem] = useState({
     label: "",
     address: "",
-    type: "wallet" as "wallet" | "contract" | "project",
+    type: "wallet" as "wallet" | "contract" | "project" | "token",
     chain: "ethereum",
   })
+
+  // Chain to chainId mapping
+  const getChainId = (chain: string): string => {
+    switch (chain.toLowerCase()) {
+      case 'ethereum': return '1'
+      case 'polygon': return '137'
+      case 'bsc': return '56'
+      case 'arbitrum': return '42161'
+      default: return '1' // Default to Ethereum
+    }
+  }
+
+  // ChainId to chain name mapping
+  const getChainFromId = (chainId: string): string => {
+    switch (chainId) {
+      case '1': return 'ethereum'
+      case '137': return 'polygon'
+      case '56': return 'bsc'
+      case '42161': return 'arbitrum'
+      default: return 'ethereum' // Default to Ethereum
+    }
+  }
   const [filter, setFilter] = useState<"all" | "pinned" | "high-risk">("all")
 
-  // Load monitored wallets from backend API on mount
+  // Load monitored wallets from backend API on mount and set up WebSocket
   useEffect(() => {
     loadMonitoredWallets()
+    
+    // Connect to WebSocket for real-time updates
+    wsService.connect()
+    
+    // Subscribe to real-time wallet activity updates
+    const unsubscribeActivity = wsService.subscribe('unusual_activity_detected', (message) => {
+      console.log('Real-time activity update:', message)
+      
+      // Update the specific wallet's alert count and last activity
+      setWatchlist(prev => prev.map(wallet => {
+        if (wallet.address.toLowerCase() === message.walletAddress?.toLowerCase()) {
+          return {
+            ...wallet,
+            alertCount: (wallet.alertCount || 0) + 1,
+            lastEvent: "unusual activity detected",
+            riskScore: Math.min(wallet.riskScore + 10, 100) // Increase risk score
+          }
+        }
+        return wallet
+      }))
+    })
+    
+    // Subscribe to wallet monitoring status updates
+    const unsubscribeStatus = wsService.subscribe('wallet_monitoring_update', (message) => {
+      console.log('Wallet monitoring update:', message)
+      // Reload the entire watchlist when wallets are added/removed elsewhere
+      loadMonitoredWallets()
+    })
+    
+    // Cleanup on unmount
+    return () => {
+      unsubscribeActivity()
+      unsubscribeStatus()
+    }
   }, [])
 
   const loadMonitoredWallets = async () => {
@@ -134,8 +194,8 @@ export function WatchlistManagement() {
               riskScore,
               lastEvent: wallet.lastChecked ? formatTimeAgo(wallet.lastChecked) : "just added",
               isPinned: false,
-              chain: "ethereum", // Default chain
-              type: "wallet" as const,
+              chain: wallet.chainId ? getChainFromId(wallet.chainId) : "ethereum", // Use chainId from backend
+              type: wallet.type || "wallet" as const,
               // Use actual backend data
               threshold: wallet.threshold,
               status: wallet.status,
@@ -178,8 +238,23 @@ export function WatchlistManagement() {
     if (!newItem.label || !newItem.address || !isValidAddress(newItem.address)) return
 
     try {
-      // Start monitoring the wallet in the backend
-      await apiService.startWalletMonitoring(newItem.address, 1000)
+      // Start monitoring the item in the backend (wallet, token, etc.)
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/wallet/monitor/${newItem.address}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          threshold: 1000,
+          type: newItem.type,
+          chainId: getChainId(newItem.chain)
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || `HTTP ${response.status}`)
+      }
 
       // Reload the entire watchlist from the backend to ensure sync
       await loadMonitoredWallets()
@@ -238,6 +313,21 @@ export function WatchlistManagement() {
     }
   }
 
+  const getTypeBadgeColor = (type: string) => {
+    switch (type.toLowerCase()) {
+      case "wallet":
+        return "bg-cyan-500/20 text-cyan-400 border-cyan-500/30"
+      case "contract":
+        return "bg-purple-500/20 text-purple-400 border-purple-500/30"
+      case "token":
+        return "bg-green-500/20 text-green-400 border-green-500/30"
+      case "project":
+        return "bg-orange-500/20 text-orange-400 border-orange-500/30"
+      default:
+        return "bg-gray-500/20 text-gray-400 border-gray-500/30"
+    }
+  }
+
   const formatAddress = (address: string) => {
     return `${address.slice(0, 6)}...${address.slice(-4)}`
   }
@@ -251,6 +341,34 @@ export function WatchlistManagement() {
 
   const isValidAddress = (address: string) => {
     return /^0x[a-fA-F0-9]{40}$/.test(address)
+  }
+
+  const handleAnalyzeWallet = async (address: string) => {
+    setAnalyzingAddress(address)
+    try {
+      const response = await apiService.analyzeWallet(address)
+      
+      if (response.data) {
+        setAnalysisResults({
+          address,
+          analysis: response.data.analysis,
+          walletData: response.data.walletData,
+          dataAvailability: response.data.dataAvailability
+        })
+        setIsAnalysisModalOpen(true)
+      }
+    } catch (error) {
+      console.error('Failed to analyze wallet:', error)
+      setAnalysisResults({
+        address,
+        error: error.message || 'Unknown error occurred',
+        analysis: null,
+        walletData: null
+      })
+      setIsAnalysisModalOpen(true)
+    } finally {
+      setAnalyzingAddress(null)
+    }
   }
 
   return (
@@ -339,6 +457,7 @@ export function WatchlistManagement() {
                       >
                         <option value="wallet">Wallet</option>
                         <option value="contract">Contract</option>
+                        <option value="token">ERC-20 Token</option>
                         <option value="project">Project</option>
                       </select>
                     </div>
@@ -408,8 +527,8 @@ export function WatchlistManagement() {
                     <div className="flex items-center space-x-3 mb-2">
                       <h3 className="font-semibold text-white">{item.label}</h3>
                       <Badge className={cn("text-xs capitalize", getChainBadgeColor(item.chain))}>{item.chain}</Badge>
-                      <Badge variant="outline" className="text-xs capitalize border-gray-600 text-gray-300">
-                        {item.type}
+                      <Badge className={cn("text-xs capitalize", getTypeBadgeColor(item.type))}>
+                        {item.type === "token" ? "ERC-20" : item.type}
                       </Badge>
                       {item.isPinned && <Pin className="h-4 w-4 text-cyber-cyan" />}
                     </div>
@@ -479,6 +598,20 @@ export function WatchlistManagement() {
                     <Button
                       variant="outline"
                       size="sm"
+                      onClick={() => handleAnalyzeWallet(item.address)}
+                      disabled={analyzingAddress === item.address}
+                      className="hover:bg-amber-500/10 hover:border-amber-500/50 bg-transparent border-gray-600 text-amber-400"
+                      title="Analyze wallet activity and risk"
+                    >
+                      {analyzingAddress === item.address ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <BarChart3 className="h-4 w-4" />
+                      )}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
                       onClick={() => togglePin(item.id)}
                       className={cn(
                         "hover:bg-cyber-cyan/10 hover:border-cyber-cyan/50 bg-transparent border-gray-600",
@@ -509,6 +642,162 @@ export function WatchlistManagement() {
           </div>
         )}
       </CardContent>
+      
+      {/* Analysis Results Modal */}
+      <Dialog open={isAnalysisModalOpen} onOpenChange={setIsAnalysisModalOpen}>
+        <DialogContent className="bg-slate-900 border-cyber-cyan/20 max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-white flex items-center gap-2">
+              <BarChart3 className="w-5 h-5 text-amber-400" />
+              Wallet Analysis Results
+            </DialogTitle>
+          </DialogHeader>
+          
+          {analysisResults && (
+            <div className="space-y-6">
+              {/* Header with address */}
+              <div className="flex items-center justify-between p-4 bg-cyber-dark/30 rounded border border-cyber-cyan/10">
+                <div>
+                  <h3 className="text-white font-medium">Wallet Address</h3>
+                  <p className="font-mono text-sm text-cyber-cyan">{analysisResults.address}</p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => window.open(`https://etherscan.io/address/${analysisResults.address}`, '_blank')}
+                  className="border-gray-600 text-gray-300 hover:bg-gray-800"
+                >
+                  <ExternalLink className="w-4 h-4 mr-2" />
+                  Etherscan
+                </Button>
+              </div>
+
+              {analysisResults.error ? (
+                <div className="p-4 bg-red-500/10 border border-red-500/30 rounded">
+                  <div className="flex items-center gap-2 text-red-400 mb-2">
+                    <AlertTriangle className="w-5 h-5" />
+                    <h4 className="font-medium">Analysis Failed</h4>
+                  </div>
+                  <p className="text-red-300">{analysisResults.error}</p>
+                </div>
+              ) : (
+                <>
+                  {/* Risk Assessment */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="p-4 bg-cyber-dark/30 rounded border border-cyber-cyan/10">
+                      <h4 className="text-white font-medium mb-3">Risk Assessment</h4>
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-gray-400">Risk Level</span>
+                          <Badge className={cn(
+                            "text-xs font-medium",
+                            analysisResults.analysis?.riskLevel === 'critical' && "bg-red-500/20 text-red-400 border-red-500/30",
+                            analysisResults.analysis?.riskLevel === 'high' && "bg-orange-500/20 text-orange-400 border-orange-500/30",
+                            analysisResults.analysis?.riskLevel === 'medium' && "bg-amber-500/20 text-amber-400 border-amber-500/30",
+                            analysisResults.analysis?.riskLevel === 'low' && "bg-green-500/20 text-green-400 border-green-500/30"
+                          )}>
+                            {analysisResults.analysis?.riskLevel?.toUpperCase() || 'UNKNOWN'}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-gray-400">Confidence</span>
+                          <span className="text-white">{((analysisResults.analysis?.confidence || 0) * 100).toFixed(1)}%</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-gray-400">Analysis Type</span>
+                          <Badge variant="outline" className="text-xs border-gray-500/30 text-gray-300">
+                            {analysisResults.analysis?.fallbackAnalysis ? 'Rule-based' : 'AI-powered'}
+                          </Badge>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="p-4 bg-cyber-dark/30 rounded border border-cyber-cyan/10">
+                      <h4 className="text-white font-medium mb-3">Activity Metrics</h4>
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-gray-400">Daily Transactions</span>
+                          <span className="text-white">{analysisResults.walletData?.dailyTxCount || 0}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-gray-400">Daily Volume</span>
+                          <span className="text-white">{analysisResults.walletData?.dailyVolumeEth || '0'} ETH</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-gray-400">Current Balance</span>
+                          <span className="text-white">{analysisResults.walletData?.currentBalanceEth || '0'} ETH</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Historical Data */}
+                  <div className="p-4 bg-cyber-dark/30 rounded border border-cyber-cyan/10">
+                    <h4 className="text-white font-medium mb-3">Historical Data</h4>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-cyber-cyan">{analysisResults.walletData?.totalTransactions || 0}</div>
+                        <div className="text-xs text-gray-400">Total Transactions</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-green-400">{analysisResults.walletData?.totalTokenTransfers || 0}</div>
+                        <div className="text-xs text-gray-400">Token Transfers</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-amber-400">
+                          {analysisResults.dataAvailability?.transactionsAvailable ? '✓' : '✗'}
+                        </div>
+                        <div className="text-xs text-gray-400">TX Data Available</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-purple-400">
+                          {analysisResults.dataAvailability?.aiAnalysisUsed ? '✓' : '✗'}
+                        </div>
+                        <div className="text-xs text-gray-400">AI Analysis Used</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Anomalies */}
+                  {analysisResults.analysis?.anomalies && analysisResults.analysis.anomalies.length > 0 && (
+                    <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded">
+                      <h4 className="text-amber-400 font-medium mb-3 flex items-center gap-2">
+                        <AlertTriangle className="w-4 h-4" />
+                        Detected Anomalies
+                      </h4>
+                      <div className="flex flex-wrap gap-2">
+                        {analysisResults.analysis.anomalies.map((anomaly: string, index: number) => (
+                          <Badge key={index} variant="outline" className="text-xs border-amber-400/30 text-amber-400">
+                            {anomaly.replace(/_/g, ' ')}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Analysis Reasoning */}
+                  {analysisResults.analysis?.reason && (
+                    <div className="p-4 bg-cyber-dark/30 rounded border border-cyber-cyan/10">
+                      <h4 className="text-white font-medium mb-2">Analysis Reasoning</h4>
+                      <p className="text-gray-300 text-sm">{analysisResults.analysis.reason}</p>
+                    </div>
+                  )}
+                </>
+              )}
+              
+              {/* Close Button */}
+              <div className="flex justify-end pt-4 border-t border-cyber-cyan/20">
+                <Button
+                  onClick={() => setIsAnalysisModalOpen(false)}
+                  className="bg-cyber-cyan/20 border border-cyber-cyan/30 text-cyber-cyan hover:bg-cyber-cyan/30"
+                >
+                  Close Analysis
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </Card>
   )
 }
