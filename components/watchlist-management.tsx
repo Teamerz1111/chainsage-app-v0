@@ -189,7 +189,7 @@ export function WatchlistManagement() {
             
             return {
               id: wallet.address,
-              label: `Wallet ${wallet.address.slice(0, 8)}...`,
+              label: wallet.label || `Wallet ${wallet.address.slice(0, 8)}...`,
               address: wallet.address,
               riskScore,
               lastEvent: wallet.lastChecked ? formatTimeAgo(wallet.lastChecked) : "just added",
@@ -247,7 +247,8 @@ export function WatchlistManagement() {
         body: JSON.stringify({ 
           threshold: 1000,
           type: newItem.type,
-          chainId: getChainId(newItem.chain)
+          chainId: getChainId(newItem.chain),
+          label: newItem.label
         }),
       })
 
@@ -594,13 +595,13 @@ export function WatchlistManagement() {
                     </div>
                   </div>
 
-                  <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="flex items-center space-x-2 ">
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => handleAnalyzeWallet(item.address)}
                       disabled={analyzingAddress === item.address}
-                      className="hover:bg-amber-500/10 hover:border-amber-500/50 bg-transparent border-gray-600 text-amber-400"
+                      className="border-gray-600 text-amber-400"
                       title="Analyze wallet activity and risk"
                     >
                       {analyzingAddress === item.address ? (
@@ -612,18 +613,9 @@ export function WatchlistManagement() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => togglePin(item.id)}
-                      className={cn(
-                        "hover:bg-cyber-cyan/10 hover:border-cyber-cyan/50 bg-transparent border-gray-600",
-                        item.isPinned && "bg-cyber-cyan/10 border-cyber-cyan/50",
-                      )}
-                    >
-                      <Pin className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="hover:bg-gray-700/20 hover:border-gray-500/50 bg-transparent border-gray-600 text-gray-300"
+                      onClick={() => window.open(`https://etherscan.io/address/${item.address}`, '_blank')}
+                      className="border-gray-600 text-gray-300"
+                      title="View on Etherscan"
                     >
                       <ExternalLink className="h-4 w-4" />
                     </Button>
@@ -631,7 +623,8 @@ export function WatchlistManagement() {
                       variant="outline"
                       size="sm"
                       onClick={() => removeFromWatchlist(item.id)}
-                      className="hover:bg-red-500/10 hover:border-red-500/50 bg-transparent text-red-400 border-gray-600"
+                      className="text-red-400 border-gray-600"
+                      title="Remove from watchlist"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>

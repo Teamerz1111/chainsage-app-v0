@@ -131,10 +131,10 @@ class ApiService {
     })
   }
 
-  async startWalletMonitoring(address: string, threshold = 1000, type = 'wallet', chainId = '1') {
+  async startWalletMonitoring(address: string, threshold = 1000, type = 'wallet', chainId = '1', label?: string) {
     return this.makeRequest(`/api/wallet/monitor/${address}`, {
       method: 'POST',
-      body: JSON.stringify({ threshold, type, chainId }),
+      body: JSON.stringify({ threshold, type, chainId, label }),
     })
   }
 

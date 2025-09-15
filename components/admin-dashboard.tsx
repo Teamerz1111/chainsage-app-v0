@@ -78,7 +78,12 @@ export function AdminDashboard() {
   const [newMessage, setNewMessage] = useState("")
   
   // Settings state
-  const [watchlists, setWatchlists] = useState({
+  const [watchlists, setWatchlists] = useState<{
+    tokens: Array<{ id: string | number; value: string; [key: string]: any }>;
+    wallets: Array<{ id: string | number; value: string; [key: string]: any }>;
+    nfts: Array<{ id: string | number; value: string; [key: string]: any }>;
+    [key: string]: Array<{ id: string | number; value: string; [key: string]: any }>;
+  }>({
     tokens: [],
     wallets: [],
     nfts: []
@@ -108,7 +113,8 @@ export function AdminDashboard() {
   })
   const [newWatchlistItem, setNewWatchlistItem] = useState({
     type: 'tokens',
-    value: ''
+    value: '',
+    label: ''
   })
   
   // Modal and API state
@@ -116,8 +122,13 @@ export function AdminDashboard() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
-  const [monitoringStatus, setMonitoringStatus] = useState(null)
-  const [activityFeed, setActivityFeed] = useState([])
+  const [monitoringStatus, setMonitoringStatus] = useState<{
+    totalMonitored?: number;
+    activeAlerts?: number;
+    lastUpdate?: number;
+    [key: string]: any;
+  } | null>(null)
+  const [activityFeed, setActivityFeed] = useState<any[]>([])
   const [isLoadingActivity, setIsLoadingActivity] = useState(false)
   
   // Activity feed filters
@@ -332,7 +343,10 @@ export function AdminDashboard() {
         // Use the backend API for wallet monitoring
         const response = await apiService.startWalletMonitoring(
           newWatchlistItem.value.trim(), 
-          thresholds.transactionAmount
+          thresholds.transactionAmount,
+          'wallet',
+          '1',
+          newWatchlistItem.label.trim() || `Wallet ${newWatchlistItem.value.slice(0, 8)}...`
         )
         
         if (response.error) {
@@ -361,7 +375,7 @@ export function AdminDashboard() {
         setSuccess(`Successfully added ${newWatchlistItem.type.slice(0, -1)} to watchlist`)
       }
       
-      setNewWatchlistItem(prev => ({ ...prev, value: '' }))
+      setNewWatchlistItem(prev => ({ ...prev, value: '', label: '' }))
       setIsAddModalOpen(false)
       
     } catch (err) {
@@ -1681,6 +1695,18 @@ export function AdminDashboard() {
                                 </Select>
                               </div>
                               
+                              {/* Label Input */}
+                              <div className="space-y-2">
+                                <Label className="text-white">Label</Label>
+                                <Input
+                                  value={newWatchlistItem.label}
+                                  onChange={(e) => setNewWatchlistItem(prev => ({ ...prev, label: e.target.value }))}
+                                  placeholder={`Enter a descriptive label (e.g., "Exchange Wallet", "DeFi Protocol")`}
+                                  className="bg-cyber-dark/30 border-cyber-cyan/30 text-white"
+                                  disabled={isLoading}
+                                />
+                              </div>
+                              
                               {/* Address/Identifier Input */}
                               <div className="space-y-2">
                                 <Label className="text-white">
@@ -1975,7 +2001,7 @@ export function AdminDashboard() {
               type="text"
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
-              onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
+              onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
               placeholder="Ask about blockchain monitoring..."
               className="flex-1 bg-gray-800/50 border border-gray-700/50 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-400 focus:outline-none focus:border-cyber-cyan/50"
             />
