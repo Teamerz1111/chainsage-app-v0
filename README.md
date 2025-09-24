@@ -163,7 +163,7 @@ npm run start
 This application follows a decentralized architecture:
 
 - **Frontend**: Next.js application providing the user interface
-- **Backend**: 0g-based service handling blockchain data processing and storage (see `../backend`)
+- **Backend**: 0g-based service handling blockchain data processing and storage
 - **Storage**: 0g decentralized storage network for secure, scalable data management
 - **Communication**: RESTful APIs and WebSocket connections for real-time updates
 
