@@ -25,7 +25,7 @@
 
 ### Backend & Storage
 - **Data Storage**: 0g decentralized storage network
-- **Backend API**: Located in `../backend` directory
+- **Backend API**: See [backend](https://github.com/Teamerz1111/backend)
 - **Architecture**: Decentralized data management with secure blockchain integration
 
 ## Setup
@@ -34,7 +34,7 @@
 
 - Node.js 18+ or Bun
 - Git
-- 0g backend service (see `../backend` for setup instructions)
+- 0g backend service (see https://github.com/Teamerz1111/backend for setup instructions)
 
 ### Installation
 
@@ -52,11 +52,8 @@ bun install
 ```
 
 3. Set up the backend service:
-```bash
-# Navigate to the backend directory and follow setup instructions
-cd ../backend
-# Follow the README instructions in the backend directory
-```
+
+See https://github.com/Teamerz1111/backend
 
 4. Set up environment variables:
 ```bash
@@ -257,7 +254,7 @@ The project includes sample wallet addresses for testing in `SAMPLE.md`. These a
 ### Backend Integration
 
 Ensure the 0g backend service is running before testing:
-1. Follow setup instructions in `../backend/README.md`
+1. Follow setup instructions in https://github.com/Teamerz1111/backend
 2. Verify the backend is accessible at the configured API endpoints
 3. Test real-time features require WebSocket connectivity
 
