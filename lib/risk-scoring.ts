@@ -1,3 +1,5 @@
+import { TransactionAnalysisPrompt } from './0g-compute'
+
 export interface RiskFactors {
   transactionVolume: number
   frequencyScore: number
@@ -19,6 +21,7 @@ export interface RiskMetadata {
     calculatedAt: number
     version: string
     model: string
+    provider?: string
   }
 }
 
@@ -42,7 +45,7 @@ export class IntelligentRiskScorer {
     }, 0)
 
     const normalizedScore = Math.max(0, Math.min(100, weightedScore))
-    
+
     let severity: 'low' | 'medium' | 'high' | 'critical'
     if (normalizedScore >= 80) severity = 'critical'
     else if (normalizedScore >= 60) severity = 'high'
@@ -62,8 +65,79 @@ export class IntelligentRiskScorer {
 
     const baseConfidence = 85
     const variancePenalty = Math.min(30, factorVariance * 0.5)
-    
+
     return Math.max(50, Math.min(100, baseConfidence - variancePenalty))
+  }
+
+  static async generateRiskMetadataWithAI(
+    id: string,
+    factors: RiskFactors,
+    transactionData?: {
+      hash: string
+      from: string
+      to: string
+      value: string
+      timestamp: number
+      blockNumber?: number
+    }
+  ): Promise<RiskMetadata> {
+    const { score, severity, confidence } = this.calculateRiskScore(factors)
+    
+    let aiReasoning: string[] = []
+    let aiProvider: string | undefined
+
+    // Use 0G Compute for enhanced reasoning if transaction data is available
+    if (transactionData) {
+      try {
+        // Dynamic import for 0G Compute service
+        const { zgComputeService } = await import('./0g-compute')
+        
+        const prompt: TransactionAnalysisPrompt = {
+          transactionData,
+          context: {
+            riskFactors: factors
+          }
+        };
+
+        const result = await zgComputeService.analyzeTransaction(prompt);
+        
+        if (result.success && result.data) {
+          try {
+            const analysis = JSON.parse(result.data);
+            aiReasoning = analysis.recommendations || [];
+            aiProvider = result.provider;
+          } catch (parseError) {
+            // If parsing fails, use the raw response as reasoning
+            aiReasoning = [result.data];
+            aiProvider = result.provider;
+          }
+        }
+      } catch (error) {
+        console.warn("Failed to get AI reasoning:", error);
+        // Continue with fallback reasoning
+      }
+    }
+
+    // Fallback reasoning if AI analysis fails
+    if (aiReasoning.length === 0) {
+      aiReasoning = this.generateFallbackReasoning(factors, severity)
+    }
+    
+    return {
+      id,
+      timestamp: Date.now(),
+      riskScore: score,
+      severity,
+      confidence,
+      factors,
+      reasoning: aiReasoning,
+      auditTrail: {
+        calculatedAt: Date.now(),
+        version: '2.0.0',
+        model: aiProvider ? `0g-compute-${aiProvider}` : 'intelligent-risk-scorer-v2',
+        provider: aiProvider
+      }
+    }
   }
 
   static generateRiskMetadata(
@@ -72,7 +146,7 @@ export class IntelligentRiskScorer {
     reasoning: string[] = []
   ): RiskMetadata {
     const { score, severity, confidence } = this.calculateRiskScore(factors)
-    
+
     return {
       id,
       timestamp: Date.now(),
@@ -87,6 +161,35 @@ export class IntelligentRiskScorer {
         model: 'intelligent-risk-scorer-v1'
       }
     }
+  }
+
+  private static generateFallbackReasoning(factors: RiskFactors, severity: string): string[] {
+    const reasoning: string[] = []
+
+    if (factors.transactionVolume > 80) {
+      reasoning.push("High transaction volume detected")
+    }
+    if (factors.frequencyScore > 70) {
+      reasoning.push("Unusual transaction frequency pattern")
+    }
+    if (factors.contractRisk > 60) {
+      reasoning.push("High-risk contract interaction")
+    }
+    if (factors.networkReputation < 40) {
+      reasoning.push("Low network reputation score")
+    }
+    if (factors.walletAge < 30) {
+      reasoning.push("Recently created wallet")
+    }
+    if (factors.behaviorPattern > 70) {
+      reasoning.push("Suspicious behavioral pattern detected")
+    }
+
+    if (reasoning.length === 0) {
+      reasoning.push(`Risk level: ${severity} based on standard analysis`)
+    }
+
+    return reasoning
   }
 
   static getSeverityColor(severity: 'low' | 'medium' | 'high' | 'critical'): {

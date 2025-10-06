@@ -1,4 +1,5 @@
 import { RiskMetadata, RiskFactors } from './risk-scoring'
+import { TransactionAnalysisPrompt, WalletAnalysisPrompt } from './0g-compute'
 
 // Use HTTP for localhost, HTTPS for production
 const getApiBaseUrl = () => {
@@ -108,27 +109,172 @@ class ApiService {
     return this.makeRequest('/health')
   }
 
-  // AI Classification endpoints
+  // AI Classification endpoints using 0G Compute
   async classifyTransaction(transactionData: TransactionData) {
-    return this.makeRequest<ClassificationResult>('/api/ai/classify', {
-      method: 'POST',
-      body: JSON.stringify({ transactionData }),
-    })
+    try {
+      // Dynamic import for 0G Compute service
+      const { zgComputeService } = await import('./0g-compute')
+      
+      const prompt: TransactionAnalysisPrompt = {
+        transactionData,
+        context: {
+          riskFactors: {
+            transactionVolume: parseFloat(transactionData.value),
+            frequencyScore: 50, // Default, could be enhanced with historical data
+            contractRisk: 30,   // Default, could be enhanced with contract analysis
+            networkReputation: 70, // Default
+            walletAge: 60,      // Default
+            behaviorPattern: 40  // Default
+          }
+        }
+      };
+
+      const result = await zgComputeService.analyzeTransaction(prompt);
+      
+      if (result.success && result.data) {
+        // Parse the AI response
+        let analysis;
+        try {
+          analysis = JSON.parse(result.data);
+        } catch (parseError) {
+          // If parsing fails, create a fallback analysis
+          analysis = {
+            isUnusual: false,
+            riskLevel: 'low',
+            confidence: 50,
+            anomalies: [],
+            reason: result.data,
+            recommendations: []
+          };
+        }
+
+        const classificationResult: ClassificationResult = {
+          classification: {
+            isUnusual: analysis.isUnusual || false,
+            riskLevel: analysis.riskLevel || 'low',
+            confidence: analysis.confidence || 50,
+            anomalies: analysis.anomalies || [],
+            reason: analysis.reason || 'Analysis completed'
+          },
+          storage: {
+            provider: result.provider,
+            model: result.model,
+            timestamp: Date.now()
+          },
+          timestamp: Date.now()
+        };
+
+        return { data: classificationResult };
+      } else {
+        return { error: result.error || 'Failed to analyze transaction' };
+      }
+    } catch (error) {
+      return { error: error instanceof Error ? error.message : 'Unknown error occurred' };
+    }
   }
 
   async getClassificationHistory(hash: string) {
-    return this.makeRequest(`/api/ai/history/${hash}`)
+    // For now, return empty history as 0G Compute doesn't store history
+    // This could be enhanced to store results in 0G storage
+    return { data: { history: [], total: 0 } };
   }
 
   async getClassificationStats(timeframe = '24h') {
-    return this.makeRequest(`/api/ai/stats?timeframe=${timeframe}`)
+    // For now, return mock stats as 0G Compute doesn't provide stats
+    // This could be enhanced to aggregate from 0G storage
+    return {
+      data: {
+        totalClassifications: 0,
+        timeframe,
+        riskLevels: { low: 0, medium: 0, high: 0, critical: 0 }
+      }
+    };
   }
 
-  // Wallet monitoring endpoints
+  // Wallet monitoring endpoints using 0G Compute
   async analyzeWallet(address: string) {
-    return this.makeRequest<WalletAnalysis>(`/api/wallet/analyze/${address}`, {
-      method: 'POST',
-    })
+    try {
+      // Dynamic import for 0G Compute service
+      const { zgComputeService } = await import('./0g-compute')
+      
+      // Get wallet transaction history (mock data for now, could be enhanced with real blockchain data)
+      const mockTransactionHistory = [
+        {
+          hash: "0x123...",
+          from: address,
+          to: "0x456...",
+          value: "1.5",
+          timestamp: Date.now() - 86400000, // 1 day ago
+          blockNumber: 12345
+        },
+        {
+          hash: "0x789...",
+          from: "0x456...",
+          to: address,
+          value: "0.8",
+          timestamp: Date.now() - 172800000, // 2 days ago
+          blockNumber: 12340
+        }
+      ];
+
+      const prompt: WalletAnalysisPrompt = {
+        walletAddress: address,
+        transactionHistory: mockTransactionHistory,
+        context: {
+          riskFactors: {
+            transactionVolume: 50,
+            frequencyScore: 60,
+            contractRisk: 40,
+            networkReputation: 70,
+            walletAge: 80,
+            behaviorPattern: 50
+          }
+        }
+      };
+
+      const result = await zgComputeService.analyzeWallet(prompt);
+      
+      if (result.success && result.data) {
+        // Parse the AI response
+        let analysis;
+        try {
+          analysis = JSON.parse(result.data);
+        } catch (parseError) {
+          // If parsing fails, create a fallback analysis
+          analysis = {
+            isUnusual: false,
+            riskLevel: 'low',
+            confidence: 50,
+            anomalies: [],
+            dailyVolume: "0",
+            dailyTxCount: 0,
+            avgAmount: "0",
+            behaviorPattern: "Normal",
+            recommendations: []
+          };
+        }
+
+        const walletAnalysis: WalletAnalysis = {
+          walletAddress: address,
+          analysis: {
+            isUnusual: analysis.isUnusual || false,
+            riskLevel: analysis.riskLevel || 'low',
+            confidence: analysis.confidence || 50,
+            anomalies: analysis.anomalies || [],
+            dailyVolume: analysis.dailyVolume || "0",
+            dailyTxCount: analysis.dailyTxCount || 0,
+            avgAmount: analysis.avgAmount || "0"
+          },
+          timestamp: Date.now()
+        };
+
+        return { data: walletAnalysis };
+      } else {
+        return { error: result.error || 'Failed to analyze wallet' };
+      }
+    } catch (error) {
+      return { error: error instanceof Error ? error.message : 'Unknown error occurred' };
+    }
   }
 
   async startWalletMonitoring(address: string, threshold = 1000, type = 'wallet', chainId = '1', label?: string) {

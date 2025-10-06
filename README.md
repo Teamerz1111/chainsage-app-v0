@@ -15,6 +15,7 @@
 ## Tech Stack
 
 ### Frontend
+
 - **Framework**: Next.js 15 with React 19
 - **Styling**: Tailwind CSS 4.1 with custom animations
 - **UI Components**: Radix UI primitives with custom theming
@@ -24,6 +25,7 @@
 - **Deployment**: Vercel
 
 ### Backend & Storage
+
 - **Data Storage**: 0g decentralized storage network
 - **Backend API**: See [backend](https://github.com/Teamerz1111/backend)
 - **Architecture**: Decentralized data management with secure blockchain integration
@@ -39,12 +41,14 @@
 ### Installation
 
 1. Clone the repository:
+
 ```bash
 git clone git@github.com:Teamerz1111/chainsage-app-v0.git
 cd chainsage-app-v0
 ```
 
 2. Install dependencies:
+
 ```bash
 npm install
 # or
@@ -56,12 +60,14 @@ bun install
 See https://github.com/Teamerz1111/backend
 
 4. Set up environment variables:
+
 ```bash
 cp .env.local.example .env.local
 # Configure API endpoints to connect to your 0g backend service
 ```
 
 5. Start the development server:
+
 ```bash
 npm run dev
 # or
@@ -107,13 +113,16 @@ bun dev
 ## Key Components
 
 ### Dashboard Features
+
 - **Activity Feed** (`components/activity-feed.tsx`) - Real-time transaction monitoring
 - **Risk Feed** (`components/risk-feed.tsx`) - Risk alerts and scoring
 - **Admin Dashboard** (`components/admin-dashboard.tsx`) - Management interface
 - **Watchlist Management** - Track specific addresses and contracts
 
 ### UI Components
+
 Built with Radix UI primitives and custom styling:
+
 - Forms, dialogs, dropdowns, and navigation
 - Custom theming with dark/light mode support
 - Matrix-style animations and cyberpunk aesthetic
@@ -123,12 +132,49 @@ Built with Radix UI primitives and custom styling:
 Create a `.env.local` file with the following variables:
 
 ```env
-# Backend API Configuration
+# Backend API Configuration (optional - for non-AI endpoints)
 NEXT_PUBLIC_API_URL=http://localhost:8000  # 0g backend service URL
 NEXT_PUBLIC_WS_URL=ws://localhost:8080     # WebSocket endpoint for real-time updates
 
-# Add other required environment variables
+# 0G Compute Integration
+# No private keys required! The app uses your connected MetaMask wallet for authentication.
+# Simply connect your wallet and the 0G Compute service will initialize automatically.
 ```
+
+## 0G Compute Integration
+
+The app now uses **0G Compute Network** for AI services instead of traditional APIs:
+
+### ✅ **No Private Keys Required**
+
+- **Wallet-based authentication** using MetaMask
+- **Secure connection** through your existing wallet
+- **No environment variables** needed for AI services
+
+### 🚀 **Setup Process**
+
+1. **Connect MetaMask** wallet to the app
+2. **Initialize 0G Compute** service (automatic)
+3. **Fund account** with OG tokens (~0.1 OG for testing)
+4. **Start using AI** features immediately
+
+### 🧪 **Testing**
+
+Visit `/test-0g` to test the 0G Compute integration:
+
+- ✅ Wallet connection status
+- ✅ 0G Compute initialization
+- ✅ Account balance management
+- ✅ AI chat functionality
+- ✅ Risk analysis with AI reasoning
+
+### 💡 **Benefits**
+
+- **No rate limiting** - decentralized infrastructure
+- **Enhanced security** - wallet-based authentication
+- **Better AI models** - Llama 3.3 70B, DeepSeek R1
+- **Cost transparency** - pay-per-use pricing
+- **High availability** - multiple provider failover
 
 ## Deployment
 
@@ -254,6 +300,7 @@ The project includes sample wallet addresses for testing in `SAMPLE.md`. These a
 ### Backend Integration
 
 Ensure the 0g backend service is running before testing:
+
 1. Follow setup instructions in https://github.com/Teamerz1111/backend
 2. Verify the backend is accessible at the configured API endpoints
 3. Test real-time features require WebSocket connectivity

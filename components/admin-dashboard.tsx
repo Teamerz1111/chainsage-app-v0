@@ -59,7 +59,7 @@ import {
 import { WatchlistManagement } from "@/components/watchlist-management"
 import Link from "next/link"
 import { useState, useEffect } from "react"
-import { apiService } from "@/lib/api"
+import { ChatPrompt } from "@/lib/0g-compute"
 import { wsService } from "@/lib/websocket"
 import { cn } from "@/lib/utils"
 
@@ -76,13 +76,13 @@ export function AdminDashboard() {
     },
   ])
   const [newMessage, setNewMessage] = useState("")
-  
+
   // Settings state
   const [watchlists, setWatchlists] = useState<{
-    tokens: Array<{ id: string | number; value: string; [key: string]: any }>;
-    wallets: Array<{ id: string | number; value: string; [key: string]: any }>;
-    nfts: Array<{ id: string | number; value: string; [key: string]: any }>;
-    [key: string]: Array<{ id: string | number; value: string; [key: string]: any }>;
+    tokens: Array<{ id: string | number; value: string;[key: string]: any }>;
+    wallets: Array<{ id: string | number; value: string;[key: string]: any }>;
+    nfts: Array<{ id: string | number; value: string;[key: string]: any }>;
+    [key: string]: Array<{ id: string | number; value: string;[key: string]: any }>;
   }>({
     tokens: [],
     wallets: [],
@@ -116,7 +116,7 @@ export function AdminDashboard() {
     value: '',
     label: ''
   })
-  
+
   // Modal and API state
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -130,7 +130,7 @@ export function AdminDashboard() {
   } | null>(null)
   const [activityFeed, setActivityFeed] = useState<any[]>([])
   const [isLoadingActivity, setIsLoadingActivity] = useState(false)
-  
+
   // Activity feed filters
   const [activityFilters, setActivityFilters] = useState({
     type: 'all', // all, blockchain_activity, wallet_event, alert
@@ -140,15 +140,15 @@ export function AdminDashboard() {
     timeRange: 'all', // all, 1h, 6h, 24h, 7d
     searchTerm: ''
   })
-  
+
   // Load monitoring status on component mount and set up WebSocket
   useEffect(() => {
     loadMonitoringStatus()
     loadActivityFeed()
-    
+
     // Connect to WebSocket for real-time updates
     wsService.connect()
-    
+
     // Subscribe to wallet monitoring events
     const unsubscribeActivity = wsService.subscribe('unusual_activity_detected', (message) => {
       console.log('Unusual activity detected:', message)
@@ -157,32 +157,32 @@ export function AdminDashboard() {
       setSuccess(`⚠️ Unusual activity detected on wallet ${message.walletAddress}`)
       setTimeout(() => setSuccess(''), 5000)
     })
-    
+
     const unsubscribeWalletEvents = wsService.subscribe('wallet_monitoring_update', (message) => {
       console.log('Wallet monitoring update:', message)
       // Refresh data when wallets are added/removed
       loadMonitoringStatus()
       loadActivityFeed()
     })
-    
+
     // Cleanup on unmount
     return () => {
       unsubscribeActivity()
       unsubscribeWalletEvents()
     }
   }, [])
-  
+
   const loadMonitoringStatus = async () => {
     try {
       const [statusResponse, walletsResponse] = await Promise.all([
         apiService.getMonitoringStatus(),
         apiService.getMonitoredWallets()
       ])
-      
+
       if (statusResponse.data) {
         setMonitoringStatus(statusResponse.data)
       }
-      
+
       if (walletsResponse.data && walletsResponse.data.wallets) {
         setWatchlists(prev => ({
           ...prev,
@@ -200,25 +200,25 @@ export function AdminDashboard() {
       console.error('Failed to load monitoring data:', err)
     }
   }
-  
+
   const loadActivityFeed = async () => {
     try {
       setIsLoadingActivity(true)
-      
+
       // Load real blockchain activities for all monitored wallets
       const [activityResponse, walletEventsResponse, alertsResponse] = await Promise.all([
         apiService.getActivityFeed(30), // Get last 30 blockchain activities
         apiService.getWalletEvents(10), // Get last 10 wallet events
         apiService.getAlerts(10) // Get last 10 alerts
       ])
-      
+
       const activityItems = []
-      
+
       // Add real blockchain activities
       if (activityResponse.data && activityResponse.data.activities) {
         activityResponse.data.activities.forEach(activity => {
           let title, description, icon
-          
+
           switch (activity.type) {
             case 'transaction':
               title = 'ETH Transaction'
@@ -271,7 +271,7 @@ export function AdminDashboard() {
           })
         })
       }
-      
+
       // Add wallet management events
       if (walletEventsResponse.data && walletEventsResponse.data.events) {
         walletEventsResponse.data.events.forEach(event => {
@@ -288,7 +288,7 @@ export function AdminDashboard() {
           })
         })
       }
-      
+
       // Add alerts
       if (alertsResponse.data && alertsResponse.data.alerts) {
         alertsResponse.data.alerts.forEach(alert => {
@@ -306,10 +306,10 @@ export function AdminDashboard() {
           })
         })
       }
-      
+
       // Sort by timestamp (most recent first)
       activityItems.sort((a, b) => b.timestamp - a.timestamp)
-      
+
       setActivityFeed(activityItems)
     } catch (err) {
       console.error('Failed to load activity feed:', err)
@@ -317,7 +317,7 @@ export function AdminDashboard() {
       setIsLoadingActivity(false)
     }
   }
-  
+
   const getSeverityFromRisk = (riskLevel) => {
     switch (riskLevel) {
       case 'critical': return 'critical'
@@ -327,39 +327,39 @@ export function AdminDashboard() {
       default: return 'info'
     }
   }
-  
+
   const handleAddWatchlistItem = async () => {
     if (!newWatchlistItem.value.trim()) {
       setError('Please enter a valid address or identifier')
       return
     }
-    
+
     setIsLoading(true)
     setError('')
     setSuccess('')
-    
+
     try {
       if (newWatchlistItem.type === 'wallets') {
         // Use the backend API for wallet monitoring
         const response = await apiService.startWalletMonitoring(
-          newWatchlistItem.value.trim(), 
+          newWatchlistItem.value.trim(),
           thresholds.transactionAmount,
           'wallet',
           '1',
           newWatchlistItem.label.trim() || `Wallet ${newWatchlistItem.value.slice(0, 8)}...`
         )
-        
+
         if (response.error) {
           throw new Error(response.error)
         }
-        
+
         setSuccess(`Successfully added wallet ${newWatchlistItem.value} to monitoring`)
-        
+
         // Add to local state
         setWatchlists(prev => ({
           ...prev,
           [newWatchlistItem.type]: [
-            ...prev[newWatchlistItem.type], 
+            ...prev[newWatchlistItem.type],
             { id: Date.now(), value: newWatchlistItem.value.trim() }
           ]
         }))
@@ -368,23 +368,23 @@ export function AdminDashboard() {
         setWatchlists(prev => ({
           ...prev,
           [newWatchlistItem.type]: [
-            ...prev[newWatchlistItem.type], 
+            ...prev[newWatchlistItem.type],
             { id: Date.now(), value: newWatchlistItem.value.trim() }
           ]
         }))
         setSuccess(`Successfully added ${newWatchlistItem.type.slice(0, -1)} to watchlist`)
       }
-      
+
       setNewWatchlistItem(prev => ({ ...prev, value: '', label: '' }))
       setIsAddModalOpen(false)
-      
+
     } catch (err) {
       setError(err.message || 'Failed to add item to watchlist')
     } finally {
       setIsLoading(false)
     }
   }
-  
+
   const handleRemoveWatchlistItem = async (type, item) => {
     if (type === 'wallets') {
       try {
@@ -402,24 +402,24 @@ export function AdminDashboard() {
         setIsLoading(false)
       }
     }
-    
+
     setWatchlists(prev => ({
       ...prev,
       [type]: prev[type].filter(i => i.id !== item.id)
     }))
   }
-  
+
   const clearMessages = () => {
     setError('')
     setSuccess('')
   }
-  
+
   const formatTimeAgo = (timestamp) => {
     const diff = Date.now() - timestamp
     const minutes = Math.floor(diff / 60000)
     const hours = Math.floor(diff / 3600000)
     const days = Math.floor(diff / 86400000)
-    
+
     if (days > 0) return `${days}d ago`
     if (hours > 0) return `${hours}h ago`
     if (minutes > 0) return `${minutes}m ago`
@@ -479,7 +479,7 @@ export function AdminDashboard() {
 
     // Filter by activity type (for blockchain activities)
     if (activityFilters.activityType !== 'all') {
-      filtered = filtered.filter(item => 
+      filtered = filtered.filter(item =>
         item.type !== 'blockchain_activity' || item.activityType === activityFilters.activityType
       )
     }
@@ -491,8 +491,8 @@ export function AdminDashboard() {
 
     // Filter by risk level
     if (activityFilters.riskLevel !== 'all') {
-      filtered = filtered.filter(item => 
-        item.riskLevel === activityFilters.riskLevel || 
+      filtered = filtered.filter(item =>
+        item.riskLevel === activityFilters.riskLevel ||
         item.itemRiskLevel === activityFilters.riskLevel
       )
     }
@@ -501,7 +501,7 @@ export function AdminDashboard() {
     if (activityFilters.timeRange !== 'all') {
       const now = Date.now()
       let timeThreshold = 0
-      
+
       switch (activityFilters.timeRange) {
         case '1h':
           timeThreshold = now - (60 * 60 * 1000)
@@ -516,14 +516,14 @@ export function AdminDashboard() {
           timeThreshold = now - (7 * 24 * 60 * 60 * 1000)
           break
       }
-      
+
       filtered = filtered.filter(item => item.timestamp >= timeThreshold)
     }
 
     // Filter by search term
     if (activityFilters.searchTerm.trim()) {
       const searchLower = activityFilters.searchTerm.toLowerCase()
-      filtered = filtered.filter(item => 
+      filtered = filtered.filter(item =>
         item.title.toLowerCase().includes(searchLower) ||
         item.description.toLowerCase().includes(searchLower) ||
         (item.hash && item.hash.toLowerCase().includes(searchLower)) ||
@@ -541,7 +541,7 @@ export function AdminDashboard() {
   const clearAllFilters = () => {
     setActivityFilters({
       type: 'all',
-      activityType: 'all', 
+      activityType: 'all',
       severity: 'all',
       riskLevel: 'all',
       timeRange: 'all',
@@ -549,7 +549,7 @@ export function AdminDashboard() {
     })
   }
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (!newMessage.trim()) return
 
     const userMessage = {
@@ -560,18 +560,58 @@ export function AdminDashboard() {
     }
 
     setMessages((prev) => [...prev, userMessage])
+    const currentMessage = newMessage
     setNewMessage("")
 
-    // Simulate AI response
-    setTimeout(() => {
-      const aiResponse = {
+    try {
+      // Dynamic import for 0G Compute service
+      const { zgComputeService } = await import("@/lib/0g-compute")
+      
+      // Use 0G Compute for AI response
+      const prompt: ChatPrompt = {
+        message: currentMessage,
+        context: {
+          userRole: "admin",
+          sessionHistory: messages.slice(-5), // Last 5 messages for context
+          blockchainData: {
+            connectedWallet: address,
+            activeSection: activeSection,
+            watchlistCount: watchlist.length
+          }
+        }
+      };
+
+      const result = await zgComputeService.chat(prompt);
+      
+      if (result.success && result.data) {
+        const aiResponse = {
+          id: messages.length + 2,
+          text: result.data,
+          sender: "ai",
+          timestamp: new Date(),
+        }
+        setMessages((prev) => [...prev, aiResponse])
+      } else {
+        // Fallback response if 0G Compute fails
+        const fallbackResponse = {
+          id: messages.length + 2,
+          text: "I apologize, but I'm having trouble connecting to the AI service right now. Please try again later or check your 0G Compute connection.",
+          sender: "ai",
+          timestamp: new Date(),
+        }
+        setMessages((prev) => [...prev, fallbackResponse])
+      }
+    } catch (error) {
+      console.error("AI chat error:", error);
+      // Fallback response on error
+      const errorResponse = {
         id: messages.length + 2,
-        text: "I understand you're asking about blockchain monitoring. Let me help you with that. What specific aspect would you like to explore?",
+        text: "I encountered an error while processing your request. Please try again.",
         sender: "ai",
         timestamp: new Date(),
       }
-      setMessages((prev) => [...prev, aiResponse])
-    }, 1000)
+      setMessages((prev) => [...prev, errorResponse])
+    }
   }
 
   const sideNavItems = [
@@ -638,11 +678,10 @@ export function AdminDashboard() {
                     <button
                       key={item.id}
                       onClick={() => setActiveSection(item.id)}
-                      className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md w-full transition-colors ${
-                        activeSection === item.id
+                      className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md w-full transition-colors ${activeSection === item.id
                           ? "bg-cyber-cyan/20 text-cyber-cyan border-r-2 border-cyber-cyan"
                           : "text-gray-300 hover:bg-cyber-cyan/10 hover:text-cyber-cyan"
-                      }`}
+                        }`}
                     >
                       <Icon className="mr-3 flex-shrink-0 h-5 w-5" />
                       {item.label}
@@ -673,90 +712,90 @@ export function AdminDashboard() {
               {/* Overview Section */}
               {activeSection === "overview" && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-8">
-                {/* Alert Settings */}
-                <Card className="bg-cyber-dark/50 border-cyber-cyan/20 hover:border-cyber-cyan/40 transition-colors">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-white">
-                      <Bell className="w-5 h-5 text-cyber-green" />
-                      Alert Settings
-                    </CardTitle>
-                    <CardDescription>Configure your notification preferences</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-400">Active Alerts</span>
-                        <Badge variant="secondary">12</Badge>
+                  {/* Alert Settings */}
+                  <Card className="bg-cyber-dark/50 border-cyber-cyan/20 hover:border-cyber-cyan/40 transition-colors">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-white">
+                        <Bell className="w-5 h-5 text-cyber-green" />
+                        Alert Settings
+                      </CardTitle>
+                      <CardDescription>Configure your notification preferences</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-gray-400">Active Alerts</span>
+                          <Badge variant="secondary">12</Badge>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-gray-400">Risk Threshold</span>
+                          <Badge variant="outline" className="border-amber-400/30 text-amber-400">
+                            Medium
+                          </Badge>
+                        </div>
+                        <Button className="w-full mt-4 bg-cyber-green/20 border border-cyber-green/30 text-cyber-green hover:bg-cyber-green/30">
+                          Configure Alerts
+                        </Button>
                       </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-400">Risk Threshold</span>
-                        <Badge variant="outline" className="border-amber-400/30 text-amber-400">
-                          Medium
-                        </Badge>
-                      </div>
-                      <Button className="w-full mt-4 bg-cyber-green/20 border border-cyber-green/30 text-cyber-green hover:bg-cyber-green/30">
-                        Configure Alerts
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
+                    </CardContent>
+                  </Card>
 
-                {/* Analytics */}
-                <Card className="bg-cyber-dark/50 border-cyber-cyan/20 hover:border-cyber-cyan/40 transition-colors">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-white">
-                      <BarChart3 className="w-5 h-5 text-purple-400" />
-                      Analytics
-                    </CardTitle>
-                    <CardDescription>View your monitoring statistics</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-400">Transactions Tracked</span>
-                        <Badge variant="secondary">1,247</Badge>
+                  {/* Analytics */}
+                  <Card className="bg-cyber-dark/50 border-cyber-cyan/20 hover:border-cyber-cyan/40 transition-colors">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-white">
+                        <BarChart3 className="w-5 h-5 text-purple-400" />
+                        Analytics
+                      </CardTitle>
+                      <CardDescription>View your monitoring statistics</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-gray-400">Transactions Tracked</span>
+                          <Badge variant="secondary">1,247</Badge>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-gray-400">Risks Detected</span>
+                          <Badge variant="outline" className="border-red-400/30 text-red-400">
+                            8
+                          </Badge>
+                        </div>
+                        <Button className="w-full mt-4 bg-purple-400/20 border border-purple-400/30 text-purple-400 hover:bg-purple-400/30">
+                          View Analytics
+                        </Button>
                       </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-400">Risks Detected</span>
-                        <Badge variant="outline" className="border-red-400/30 text-red-400">
-                          8
-                        </Badge>
-                      </div>
-                      <Button className="w-full mt-4 bg-purple-400/20 border border-purple-400/30 text-purple-400 hover:bg-purple-400/30">
-                        View Analytics
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
+                    </CardContent>
+                  </Card>
 
-                {/* Security Settings */}
-                <Card className="bg-cyber-dark/50 border-cyber-cyan/20 hover:border-cyber-cyan/40 transition-colors">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-white">
-                      <Shield className="w-5 h-5 text-amber-400" />
-                      Security Settings
-                    </CardTitle>
-                    <CardDescription>Manage your account security</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-400">2FA Status</span>
-                        <Badge variant="outline" className="border-cyber-green/30 text-cyber-green">
-                          Enabled
-                        </Badge>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-400">Session Timeout</span>
-                        <Badge variant="secondary">24h</Badge>
-                      </div>
-                      <Button className="w-full mt-4 bg-amber-400/20 border border-amber-400/30 text-amber-400 hover:bg-amber-400/30">
+                  {/* Security Settings */}
+                  <Card className="bg-cyber-dark/50 border-cyber-cyan/20 hover:border-cyber-cyan/40 transition-colors">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-white">
+                        <Shield className="w-5 h-5 text-amber-400" />
                         Security Settings
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
+                      </CardTitle>
+                      <CardDescription>Manage your account security</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-gray-400">2FA Status</span>
+                          <Badge variant="outline" className="border-cyber-green/30 text-cyber-green">
+                            Enabled
+                          </Badge>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-gray-400">Session Timeout</span>
+                          <Badge variant="secondary">24h</Badge>
+                        </div>
+                        <Button className="w-full mt-4 bg-amber-400/20 border border-amber-400/30 text-amber-400 hover:bg-amber-400/30">
+                          Security Settings
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
               )}
 
               {/* Quick Actions */}
@@ -833,7 +872,7 @@ export function AdminDashboard() {
                               className="bg-cyber-dark/30 border-cyber-cyan/30 text-white placeholder-gray-400"
                             />
                           </div>
-                          
+
                           {/* Clear Filters Button */}
                           <Button
                             onClick={clearAllFilters}
@@ -844,7 +883,7 @@ export function AdminDashboard() {
                             Clear Filters
                           </Button>
                         </div>
-                        
+
                         {/* Filter Controls Grid */}
                         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
                           {/* Activity Type Filter */}
@@ -862,12 +901,12 @@ export function AdminDashboard() {
                               </SelectContent>
                             </Select>
                           </div>
-                          
+
                           {/* Blockchain Activity Type Filter */}
                           <div className="space-y-1">
                             <Label className="text-xs text-gray-400">Activity</Label>
-                            <Select 
-                              value={activityFilters.activityType} 
+                            <Select
+                              value={activityFilters.activityType}
                               onValueChange={(value) => setActivityFilters(prev => ({ ...prev, activityType: value }))}
                               disabled={activityFilters.type !== 'all' && activityFilters.type !== 'blockchain_activity'}
                             >
@@ -883,7 +922,7 @@ export function AdminDashboard() {
                               </SelectContent>
                             </Select>
                           </div>
-                          
+
                           {/* Severity Filter */}
                           <div className="space-y-1">
                             <Label className="text-xs text-gray-400">Severity</Label>
@@ -900,7 +939,7 @@ export function AdminDashboard() {
                               </SelectContent>
                             </Select>
                           </div>
-                          
+
                           {/* Risk Level Filter */}
                           <div className="space-y-1">
                             <Label className="text-xs text-gray-400">Risk Level</Label>
@@ -917,7 +956,7 @@ export function AdminDashboard() {
                               </SelectContent>
                             </Select>
                           </div>
-                          
+
                           {/* Time Range Filter */}
                           <div className="space-y-1">
                             <Label className="text-xs text-gray-400">Time Range</Label>
@@ -935,13 +974,13 @@ export function AdminDashboard() {
                             </Select>
                           </div>
                         </div>
-                        
+
                         {/* Active Filter Count */}
                         {(() => {
                           const activeFilterCount = Object.values(activityFilters).filter(
                             (value, index) => index < 5 && value !== 'all'
                           ).length + (activityFilters.searchTerm.trim() ? 1 : 0)
-                          
+
                           return activeFilterCount > 0 ? (
                             <div className="flex items-center gap-2 text-sm">
                               <Badge variant="outline" className="border-cyber-cyan/30 text-cyber-cyan">
@@ -961,7 +1000,7 @@ export function AdminDashboard() {
                         </div>
                       ) : (() => {
                         const filteredActivities = getFilteredActivityFeed()
-                        
+
                         if (activityFeed.length === 0) {
                           return (
                             <div className="text-center py-8">
@@ -971,14 +1010,14 @@ export function AdminDashboard() {
                             </div>
                           )
                         }
-                        
+
                         if (filteredActivities.length === 0) {
                           return (
                             <div className="text-center py-8">
                               <Activity className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                               <h3 className="text-lg font-medium text-white mb-2">No Activities Match Filters</h3>
                               <p className="text-gray-400">Try adjusting your filters to see more results</p>
-                              <Button 
+                              <Button
                                 onClick={clearAllFilters}
                                 className="mt-4 bg-cyber-cyan/20 border border-cyber-cyan/30 text-cyber-cyan hover:bg-cyber-cyan/30"
                               >
@@ -987,172 +1026,172 @@ export function AdminDashboard() {
                             </div>
                           )
                         }
-                        
+
                         return (
                           <div className="space-y-4 max-h-96 overflow-y-auto">
                             {filteredActivities.map((item) => (
-                            <div
-                              key={item.id}
-                              className="flex items-start gap-4 p-4 rounded-lg border border-cyber-cyan/10 bg-cyber-dark/30 hover:bg-cyber-dark/50 transition-colors"
-                            >
-                              {/* Activity Icon */}
-                              <div className={cn(
-                                "flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center",
-                                item.severity === 'critical' && "bg-red-500/20 text-red-400",
-                                item.severity === 'error' && "bg-red-500/20 text-red-400",
-                                item.severity === 'warning' && "bg-amber-500/20 text-amber-400",
-                                item.severity === 'info' && "bg-cyber-cyan/20 text-cyber-cyan",
-                                item.type === 'blockchain_activity' && getBlockchainActivityIconColor(item.activityType),
-                                !item.severity && "bg-gray-500/20 text-gray-400"
-                              )}>
-                                {getActivityIcon(item)}
-                              </div>
-                              
-                              {/* Activity Content */}
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-start justify-between">
-                                  <div>
-                                    <h4 className="text-sm font-medium text-white">{item.title}</h4>
-                                    <p className="text-sm text-gray-400 mt-1">{item.description}</p>
-                                    
-                                    {/* Additional Details */}
-                                    {item.type === 'blockchain_activity' && (
-                                      <div className="mt-2 space-y-2">
-                                        {/* Transaction Hash */}
-                                        {item.hash && (
-                                          <div className="flex items-center gap-2">
-                                            <Badge variant="outline" className="text-xs border-gray-500/30 text-gray-300 font-mono">
-                                              {formatAddress(item.hash)}
-                                            </Badge>
-                                            <ExternalLink className="w-3 h-3 text-gray-400 hover:text-cyber-cyan cursor-pointer" 
-                                              onClick={() => window.open(`https://etherscan.io/tx/${item.hash}`, '_blank')} />
-                                          </div>
-                                        )}
-                                        
-                                        {/* From/To addresses for transactions */}
-                                        {(item.from || item.to) && (
-                                          <div className="flex items-center gap-2 text-xs">
-                                            {item.from && (
-                                              <>
-                                                <span className="text-gray-500">From:</span>
-                                                <Badge variant="outline" className="text-xs border-blue-500/30 text-blue-400">
-                                                  {formatAddress(item.from)}
-                                                </Badge>
-                                              </>
-                                            )}
-                                            {item.from && item.to && <ArrowUpRight className="w-3 h-3 text-gray-500" />}
-                                            {item.to && (
-                                              <>
-                                                <span className="text-gray-500">To:</span>
-                                                <Badge variant="outline" className="text-xs border-green-500/30 text-green-400">
-                                                  {formatAddress(item.to)}
-                                                </Badge>
-                                              </>
-                                            )}
-                                          </div>
-                                        )}
-                                        
-                                        {/* Token/Contract Info */}
-                                        {item.contractAddress && (
-                                          <div className="flex items-center gap-2">
-                                            <span className="text-xs text-gray-500">Contract:</span>
-                                            <Badge variant="outline" className="text-xs border-purple-500/30 text-purple-400">
-                                              {formatAddress(item.contractAddress)}
-                                            </Badge>
-                                          </div>
-                                        )}
-                                        
-                                        {/* Monitored Item */}
-                                        {item.monitoredItem && (
-                                          <div className="flex items-center gap-2">
-                                            <span className="text-xs text-gray-500">
-                                              Monitored {item.monitoredType || 'Item'}:
-                                            </span>
-                                            <Badge variant="outline" className="text-xs border-cyber-cyan/30 text-cyber-cyan">
-                                              {formatAddress(item.monitoredItem)}
-                                            </Badge>
-                                            {item.monitoredType && (
-                                              <Badge className={cn(
-                                                "text-xs capitalize",
-                                                item.monitoredType === 'token' && "bg-green-500/20 text-green-400 border-green-500/30",
-                                                item.monitoredType === 'wallet' && "bg-cyan-500/20 text-cyan-400 border-cyan-500/30",
-                                                item.monitoredType === 'contract' && "bg-purple-500/20 text-purple-400 border-purple-500/30",
-                                                item.monitoredType === 'project' && "bg-orange-500/20 text-orange-400 border-orange-500/30"
-                                              )}>
-                                                {item.monitoredType === 'token' ? 'ERC-20' : item.monitoredType}
+                              <div
+                                key={item.id}
+                                className="flex items-start gap-4 p-4 rounded-lg border border-cyber-cyan/10 bg-cyber-dark/30 hover:bg-cyber-dark/50 transition-colors"
+                              >
+                                {/* Activity Icon */}
+                                <div className={cn(
+                                  "flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center",
+                                  item.severity === 'critical' && "bg-red-500/20 text-red-400",
+                                  item.severity === 'error' && "bg-red-500/20 text-red-400",
+                                  item.severity === 'warning' && "bg-amber-500/20 text-amber-400",
+                                  item.severity === 'info' && "bg-cyber-cyan/20 text-cyber-cyan",
+                                  item.type === 'blockchain_activity' && getBlockchainActivityIconColor(item.activityType),
+                                  !item.severity && "bg-gray-500/20 text-gray-400"
+                                )}>
+                                  {getActivityIcon(item)}
+                                </div>
+
+                                {/* Activity Content */}
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-start justify-between">
+                                    <div>
+                                      <h4 className="text-sm font-medium text-white">{item.title}</h4>
+                                      <p className="text-sm text-gray-400 mt-1">{item.description}</p>
+
+                                      {/* Additional Details */}
+                                      {item.type === 'blockchain_activity' && (
+                                        <div className="mt-2 space-y-2">
+                                          {/* Transaction Hash */}
+                                          {item.hash && (
+                                            <div className="flex items-center gap-2">
+                                              <Badge variant="outline" className="text-xs border-gray-500/30 text-gray-300 font-mono">
+                                                {formatAddress(item.hash)}
                                               </Badge>
-                                            )}
-                                            {item.itemRiskLevel && (
-                                              <Badge className={cn(
-                                                "text-xs",
-                                                item.itemRiskLevel === 'critical' && "bg-red-500/20 text-red-400 border-red-500/30",
-                                                item.itemRiskLevel === 'high' && "bg-orange-500/20 text-orange-400 border-orange-500/30",
-                                                item.itemRiskLevel === 'medium' && "bg-amber-500/20 text-amber-400 border-amber-500/30",
-                                                item.itemRiskLevel === 'low' && "bg-green-500/20 text-green-400 border-green-500/30"
-                                              )}>
-                                                {item.itemRiskLevel.toUpperCase()}
+                                              <ExternalLink className="w-3 h-3 text-gray-400 hover:text-cyber-cyan cursor-pointer"
+                                                onClick={() => window.open(`https://etherscan.io/tx/${item.hash}`, '_blank')} />
+                                            </div>
+                                          )}
+
+                                          {/* From/To addresses for transactions */}
+                                          {(item.from || item.to) && (
+                                            <div className="flex items-center gap-2 text-xs">
+                                              {item.from && (
+                                                <>
+                                                  <span className="text-gray-500">From:</span>
+                                                  <Badge variant="outline" className="text-xs border-blue-500/30 text-blue-400">
+                                                    {formatAddress(item.from)}
+                                                  </Badge>
+                                                </>
+                                              )}
+                                              {item.from && item.to && <ArrowUpRight className="w-3 h-3 text-gray-500" />}
+                                              {item.to && (
+                                                <>
+                                                  <span className="text-gray-500">To:</span>
+                                                  <Badge variant="outline" className="text-xs border-green-500/30 text-green-400">
+                                                    {formatAddress(item.to)}
+                                                  </Badge>
+                                                </>
+                                              )}
+                                            </div>
+                                          )}
+
+                                          {/* Token/Contract Info */}
+                                          {item.contractAddress && (
+                                            <div className="flex items-center gap-2">
+                                              <span className="text-xs text-gray-500">Contract:</span>
+                                              <Badge variant="outline" className="text-xs border-purple-500/30 text-purple-400">
+                                                {formatAddress(item.contractAddress)}
                                               </Badge>
-                                            )}
-                                          </div>
-                                        )}
-                                        
-                                        {/* Block Number */}
-                                        {item.blockNumber && (
-                                          <div className="flex items-center gap-2">
-                                            <span className="text-xs text-gray-500">Block:</span>
-                                            <Badge variant="outline" className="text-xs border-gray-500/30 text-gray-400">
-                                              #{item.blockNumber.toLocaleString()}
-                                            </Badge>
-                                          </div>
-                                        )}
-                                      </div>
-                                    )}
-                                    
-                                    {/* Wallet Event Details */}
-                                    {item.type === 'wallet_event' && item.walletAddress && (
-                                      <div className="mt-2 flex items-center gap-2">
-                                        <Badge variant="outline" className="text-xs border-cyber-cyan/30 text-cyber-cyan">
-                                          {formatAddress(item.walletAddress)}
-                                        </Badge>
-                                      </div>
-                                    )}
-                                    
-                                    {/* Alert Anomalies */}
-                                    {item.anomalies && item.anomalies.length > 0 && (
-                                      <div className="mt-2 flex flex-wrap gap-1">
-                                        {item.anomalies.map((anomaly, index) => (
-                                          <Badge key={index} variant="outline" className="text-xs border-amber-400/30 text-amber-400">
-                                            {anomaly}
+                                            </div>
+                                          )}
+
+                                          {/* Monitored Item */}
+                                          {item.monitoredItem && (
+                                            <div className="flex items-center gap-2">
+                                              <span className="text-xs text-gray-500">
+                                                Monitored {item.monitoredType || 'Item'}:
+                                              </span>
+                                              <Badge variant="outline" className="text-xs border-cyber-cyan/30 text-cyber-cyan">
+                                                {formatAddress(item.monitoredItem)}
+                                              </Badge>
+                                              {item.monitoredType && (
+                                                <Badge className={cn(
+                                                  "text-xs capitalize",
+                                                  item.monitoredType === 'token' && "bg-green-500/20 text-green-400 border-green-500/30",
+                                                  item.monitoredType === 'wallet' && "bg-cyan-500/20 text-cyan-400 border-cyan-500/30",
+                                                  item.monitoredType === 'contract' && "bg-purple-500/20 text-purple-400 border-purple-500/30",
+                                                  item.monitoredType === 'project' && "bg-orange-500/20 text-orange-400 border-orange-500/30"
+                                                )}>
+                                                  {item.monitoredType === 'token' ? 'ERC-20' : item.monitoredType}
+                                                </Badge>
+                                              )}
+                                              {item.itemRiskLevel && (
+                                                <Badge className={cn(
+                                                  "text-xs",
+                                                  item.itemRiskLevel === 'critical' && "bg-red-500/20 text-red-400 border-red-500/30",
+                                                  item.itemRiskLevel === 'high' && "bg-orange-500/20 text-orange-400 border-orange-500/30",
+                                                  item.itemRiskLevel === 'medium' && "bg-amber-500/20 text-amber-400 border-amber-500/30",
+                                                  item.itemRiskLevel === 'low' && "bg-green-500/20 text-green-400 border-green-500/30"
+                                                )}>
+                                                  {item.itemRiskLevel.toUpperCase()}
+                                                </Badge>
+                                              )}
+                                            </div>
+                                          )}
+
+                                          {/* Block Number */}
+                                          {item.blockNumber && (
+                                            <div className="flex items-center gap-2">
+                                              <span className="text-xs text-gray-500">Block:</span>
+                                              <Badge variant="outline" className="text-xs border-gray-500/30 text-gray-400">
+                                                #{item.blockNumber.toLocaleString()}
+                                              </Badge>
+                                            </div>
+                                          )}
+                                        </div>
+                                      )}
+
+                                      {/* Wallet Event Details */}
+                                      {item.type === 'wallet_event' && item.walletAddress && (
+                                        <div className="mt-2 flex items-center gap-2">
+                                          <Badge variant="outline" className="text-xs border-cyber-cyan/30 text-cyber-cyan">
+                                            {formatAddress(item.walletAddress)}
                                           </Badge>
-                                        ))}
-                                      </div>
-                                    )}
-                                  </div>
-                                  
-                                  <div className="flex flex-col items-end text-right">
-                                    <span className="text-xs text-gray-500">
-                                      {formatTimeAgo(item.timestamp)}
-                                    </span>
-                                    {item.riskLevel && (
-                                      <Badge className={cn(
-                                        "text-xs mt-1",
-                                        item.riskLevel === 'critical' && "bg-red-500/20 text-red-400 border-red-500/30",
-                                        item.riskLevel === 'high' && "bg-orange-500/20 text-orange-400 border-orange-500/30",
-                                        item.riskLevel === 'medium' && "bg-amber-500/20 text-amber-400 border-amber-500/30",
-                                        item.riskLevel === 'low' && "bg-green-500/20 text-green-400 border-green-500/30"
-                                      )}>
-                                        {item.riskLevel.toUpperCase()}
-                                      </Badge>
-                                    )}
+                                        </div>
+                                      )}
+
+                                      {/* Alert Anomalies */}
+                                      {item.anomalies && item.anomalies.length > 0 && (
+                                        <div className="mt-2 flex flex-wrap gap-1">
+                                          {item.anomalies.map((anomaly, index) => (
+                                            <Badge key={index} variant="outline" className="text-xs border-amber-400/30 text-amber-400">
+                                              {anomaly}
+                                            </Badge>
+                                          ))}
+                                        </div>
+                                      )}
+                                    </div>
+
+                                    <div className="flex flex-col items-end text-right">
+                                      <span className="text-xs text-gray-500">
+                                        {formatTimeAgo(item.timestamp)}
+                                      </span>
+                                      {item.riskLevel && (
+                                        <Badge className={cn(
+                                          "text-xs mt-1",
+                                          item.riskLevel === 'critical' && "bg-red-500/20 text-red-400 border-red-500/30",
+                                          item.riskLevel === 'high' && "bg-orange-500/20 text-orange-400 border-orange-500/30",
+                                          item.riskLevel === 'medium' && "bg-amber-500/20 text-amber-400 border-amber-500/30",
+                                          item.riskLevel === 'low' && "bg-green-500/20 text-green-400 border-green-500/30"
+                                        )}>
+                                          {item.riskLevel.toUpperCase()}
+                                        </Badge>
+                                      )}
+                                    </div>
                                   </div>
                                 </div>
                               </div>
-                            </div>
                             ))}
                           </div>
                         )
                       })()}
-                      
+
                       {/* Action Buttons */}
                       <div className="flex justify-center gap-4 pt-4 border-t border-cyber-cyan/20 mt-6">
                         <Button
@@ -1169,7 +1208,7 @@ export function AdminDashboard() {
                             'Refresh Activity'
                           )}
                         </Button>
-                        
+
                         {process.env.NODE_ENV !== 'production' && (
                           <Button
                             onClick={async () => {
@@ -1228,7 +1267,7 @@ export function AdminDashboard() {
                           <h3 className="text-lg font-medium text-white border-b border-cyber-cyan/20 pb-2">
                             Transaction Alerts
                           </h3>
-                          
+
                           <div className="space-y-3">
                             <div className="flex items-center justify-between p-3 bg-cyber-dark/30 rounded border border-cyber-cyan/10">
                               <div>
@@ -1240,7 +1279,7 @@ export function AdminDashboard() {
                                 onCheckedChange={(checked) => setNotifications(prev => ({ ...prev, largeTransaction: checked }))}
                               />
                             </div>
-                            
+
                             <div className="flex items-center gap-2">
                               <Label className="text-white text-sm">Threshold ($):</Label>
                               <Input
@@ -1251,7 +1290,7 @@ export function AdminDashboard() {
                                 placeholder="10000"
                               />
                             </div>
-                            
+
                             <div className="flex items-center justify-between p-3 bg-cyber-dark/30 rounded border border-cyber-cyan/10">
                               <div>
                                 <Label className="text-white">Unusual Activity Pattern</Label>
@@ -1262,7 +1301,7 @@ export function AdminDashboard() {
                                 onCheckedChange={(checked) => setNotifications(prev => ({ ...prev, unusualActivity: checked }))}
                               />
                             </div>
-                            
+
                             <div className="flex items-center justify-between p-3 bg-cyber-dark/30 rounded border border-cyber-cyan/10">
                               <div>
                                 <Label className="text-white">High Frequency Trading</Label>
@@ -1281,7 +1320,7 @@ export function AdminDashboard() {
                           <h3 className="text-lg font-medium text-white border-b border-cyber-cyan/20 pb-2">
                             Token & Contract Alerts
                           </h3>
-                          
+
                           <div className="space-y-3">
                             <div className="flex items-center justify-between p-3 bg-cyber-dark/30 rounded border border-cyber-cyan/10">
                               <div>
@@ -1293,7 +1332,7 @@ export function AdminDashboard() {
                                 onCheckedChange={(checked) => setNotifications(prev => ({ ...prev, tokenTransfer: checked }))}
                               />
                             </div>
-                            
+
                             <div className="flex items-center gap-2">
                               <Label className="text-white text-sm">Min Amount:</Label>
                               <Input
@@ -1304,7 +1343,7 @@ export function AdminDashboard() {
                                 placeholder="1000"
                               />
                             </div>
-                            
+
                             <div className="flex items-center justify-between p-3 bg-cyber-dark/30 rounded border border-cyber-cyan/10">
                               <div>
                                 <Label className="text-white">New Contract Interaction</Label>
@@ -1315,7 +1354,7 @@ export function AdminDashboard() {
                                 onCheckedChange={(checked) => setNotifications(prev => ({ ...prev, newContract: checked }))}
                               />
                             </div>
-                            
+
                             <div className="flex items-center justify-between p-3 bg-cyber-dark/30 rounded border border-cyber-cyan/10">
                               <div>
                                 <Label className="text-white">Failed Transactions</Label>
@@ -1341,7 +1380,7 @@ export function AdminDashboard() {
                               <Label className={cn(
                                 "capitalize font-medium",
                                 risk === 'low' && "text-green-400",
-                                risk === 'medium' && "text-amber-400", 
+                                risk === 'medium' && "text-amber-400",
                                 risk === 'high' && "text-orange-400",
                                 risk === 'critical' && "text-red-400"
                               )}>{risk} Risk</Label>
@@ -1407,7 +1446,7 @@ export function AdminDashboard() {
                               </div>
                             </div>
                           ))}
-                          
+
                           {getFilteredActivityFeed().filter(item => item.type === 'alert').length === 0 && (
                             <div className="text-center py-8">
                               <CheckCircle className="w-12 h-12 text-green-400 mx-auto mb-4" />
@@ -1437,32 +1476,32 @@ export function AdminDashboard() {
                           </div>
                           <div className="text-sm text-gray-400">Total Alerts</div>
                         </div>
-                        
+
                         <div className="p-4 bg-cyber-dark/30 rounded border border-cyber-cyan/10 text-center">
                           <div className="text-2xl font-bold text-red-400">
                             {getFilteredActivityFeed().filter(item => item.type === 'alert' && item.riskLevel === 'critical').length}
                           </div>
                           <div className="text-sm text-gray-400">Critical Alerts</div>
                         </div>
-                        
+
                         <div className="p-4 bg-cyber-dark/30 rounded border border-cyber-cyan/10 text-center">
                           <div className="text-2xl font-bold text-green-400">
                             {monitoringStatus?.totalMonitored || 0}
                           </div>
                           <div className="text-sm text-gray-400">Monitored Items</div>
                         </div>
-                        
+
                         <div className="p-4 bg-cyber-dark/30 rounded border border-cyber-cyan/10 text-center">
                           <div className="text-2xl font-bold text-amber-400">
-                            {getFilteredActivityFeed().filter(item => 
-                              item.type === 'alert' && 
+                            {getFilteredActivityFeed().filter(item =>
+                              item.type === 'alert' &&
                               item.timestamp > Date.now() - 24 * 60 * 60 * 1000
                             ).length}
                           </div>
                           <div className="text-sm text-gray-400">Last 24h</div>
                         </div>
                       </div>
-                      
+
                       {/* Action Buttons */}
                       <div className="flex justify-center gap-4 pt-6 border-t border-cyber-cyan/20 mt-6">
                         <Button
@@ -1475,7 +1514,7 @@ export function AdminDashboard() {
                           <CheckCircle className="w-4 h-4 mr-2" />
                           Save Alert Settings
                         </Button>
-                        
+
                         <Button
                           onClick={loadActivityFeed}
                           disabled={isLoadingActivity}
@@ -1494,7 +1533,7 @@ export function AdminDashboard() {
                             </>
                           )}
                         </Button>
-                        
+
                         <Button
                           onClick={() => {
                             setNotifications({
@@ -1648,7 +1687,7 @@ export function AdminDashboard() {
                       <div className="flex gap-2">
                         <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
                           <DialogTrigger asChild>
-                            <Button 
+                            <Button
                               className="bg-cyber-green/20 border border-cyber-green/30 text-cyber-green hover:bg-cyber-green/30"
                               onClick={clearMessages}
                             >
@@ -1663,7 +1702,7 @@ export function AdminDashboard() {
                                 Add tokens, wallets, or NFTs to your monitoring watchlist
                               </DialogDescription>
                             </DialogHeader>
-                            
+
                             <div className="space-y-4">
                               {/* Error/Success Messages */}
                               {error && (
@@ -1672,14 +1711,14 @@ export function AdminDashboard() {
                                   <span className="text-sm">{error}</span>
                                 </div>
                               )}
-                              
+
                               {success && (
                                 <div className="flex items-center gap-2 p-3 bg-green-900/20 border border-green-500/30 rounded text-green-400">
                                   <CheckCircle className="w-4 h-4" />
                                   <span className="text-sm">{success}</span>
                                 </div>
                               )}
-                              
+
                               {/* Type Selection */}
                               <div className="space-y-2">
                                 <Label className="text-white">Type</Label>
@@ -1694,7 +1733,7 @@ export function AdminDashboard() {
                                   </SelectContent>
                                 </Select>
                               </div>
-                              
+
                               {/* Label Input */}
                               <div className="space-y-2">
                                 <Label className="text-white">Label</Label>
@@ -1706,7 +1745,7 @@ export function AdminDashboard() {
                                   disabled={isLoading}
                                 />
                               </div>
-                              
+
                               {/* Address/Identifier Input */}
                               <div className="space-y-2">
                                 <Label className="text-white">
@@ -1722,7 +1761,7 @@ export function AdminDashboard() {
                                   disabled={isLoading}
                                 />
                               </div>
-                              
+
                               {/* Threshold Setting for Wallets */}
                               {newWatchlistItem.type === 'wallets' && (
                                 <div className="space-y-2">
@@ -1739,7 +1778,7 @@ export function AdminDashboard() {
                                 </div>
                               )}
                             </div>
-                            
+
                             <DialogFooter>
                               <Button
                                 variant="outline"
@@ -1888,7 +1927,7 @@ export function AdminDashboard() {
                               </button>
                             </div>
                           )}
-                          
+
                           {success && (
                             <div className="flex items-center gap-2 p-3 bg-green-900/20 border border-green-500/30 rounded text-green-400">
                               <CheckCircle className="w-4 h-4" />
@@ -1903,7 +1942,7 @@ export function AdminDashboard() {
 
                       {/* Save Settings Button */}
                       <div className="flex justify-end pt-4 border-t border-cyber-cyan/20">
-                        <Button 
+                        <Button
                           className="bg-cyber-cyan/20 border border-cyber-cyan/30 text-cyber-cyan hover:bg-cyber-cyan/30"
                           onClick={() => {
                             setSuccess('Settings saved successfully')
@@ -1936,11 +1975,10 @@ export function AdminDashboard() {
                     setActiveSection(item.id)
                   }
                 }}
-                className={`flex flex-col items-center justify-center py-2 sm:py-3 px-1 sm:px-2 rounded-lg transition-all duration-200 relative ${
-                  activeSection === item.id || (item.id === "chat" && isChatboxOpen)
+                className={`flex flex-col items-center justify-center py-2 sm:py-3 px-1 sm:px-2 rounded-lg transition-all duration-200 relative ${activeSection === item.id || (item.id === "chat" && isChatboxOpen)
                     ? "bg-cyber-cyan/20 text-cyber-cyan border border-cyber-cyan/30"
                     : "text-gray-400 hover:text-cyber-cyan hover:bg-cyber-cyan/10 border border-transparent"
-                }`}
+                  }`}
               >
                 <Icon className="w-5 h-5 sm:w-6 sm:h-6 mb-0.5 sm:mb-1" />
                 <span className="text-xs font-medium leading-tight">{item.label}</span>
@@ -1954,9 +1992,8 @@ export function AdminDashboard() {
       </div>
 
       <div
-        className={`fixed bottom-20 left-4 right-4 sm:left-auto sm:right-4 sm:w-80 bg-cyber-dark/95 backdrop-blur-sm border border-cyber-cyan/30 rounded-lg shadow-xl transition-all duration-300 z-40 ${
-          isChatboxOpen ? "translate-y-0 opacity-100" : "translate-y-full opacity-0 pointer-events-none"
-        }`}
+        className={`fixed bottom-20 left-4 right-4 sm:left-auto sm:right-4 sm:w-80 bg-cyber-dark/95 backdrop-blur-sm border border-cyber-cyan/30 rounded-lg shadow-xl transition-all duration-300 z-40 ${isChatboxOpen ? "translate-y-0 opacity-100" : "translate-y-full opacity-0 pointer-events-none"
+          }`}
       >
         {/* Chatbox Header */}
         <div className="flex items-center justify-between p-4 border-b border-cyber-cyan/20">
@@ -1979,11 +2016,10 @@ export function AdminDashboard() {
           {messages.map((message) => (
             <div key={message.id} className={`flex ${message.sender === "user" ? "justify-end" : "justify-start"}`}>
               <div
-                className={`max-w-[80%] p-3 rounded-lg text-sm ${
-                  message.sender === "user"
+                className={`max-w-[80%] p-3 rounded-lg text-sm ${message.sender === "user"
                     ? "bg-cyber-cyan/20 text-cyber-cyan border border-cyber-cyan/30"
                     : "bg-gray-800/50 text-gray-300 border border-gray-700/50"
-                }`}
+                  }`}
               >
                 <p>{message.text}</p>
                 <p className="text-xs opacity-60 mt-1">
