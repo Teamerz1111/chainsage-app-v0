@@ -411,6 +411,144 @@ class ZGComputeService {
         }
     }
 
+    async transferFundsToInference(amount: string | number): Promise<boolean> {
+        if (!this.broker) {
+            console.error("Cannot transfer funds: broker not initialized");
+            return false;
+        }
+
+        try {
+            const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+            console.log(`🔄 Transferring ${numAmount} OG from main account to inference sub-account...`);
+
+            // Check current balance first
+            const balance = await this.getAccountBalance();
+            console.log(`📊 Current main account balance: ${balance?.balance || "0.0000"} OG`);
+            console.log(`📊 Current available balance: ${balance?.available || "0.0000"} OG`);
+            console.log(`📊 Current locked balance: ${balance?.locked || "0.0000"} OG`);
+
+            if (parseFloat(balance?.available || "0") < numAmount) {
+                console.error(`❌ Insufficient available balance. Need ${numAmount} OG, have ${balance?.available || "0"} OG`);
+                return false;
+            }
+
+            // Try transferFund with different parameter combinations
+            console.log("💡 Attempting transferFund with different parameter combinations...");
+
+            try {
+                // Method 1: Try with service type first, then amount
+                console.log(`Trying transferFund("inference", ${numAmount})...`);
+                await this.broker.ledger.transferFund("inference", numAmount);
+                console.log(`✅ Successfully transferred ${numAmount} OG to inference sub-account`);
+            } catch (error1) {
+                console.log("Method 1 failed:", error1 instanceof Error ? error1.message : "Unknown error");
+
+                try {
+                    // Method 2: Try with amount first, then service type
+                    console.log(`Trying transferFund(${numAmount}, "inference")...`);
+                    await this.broker.ledger.transferFund(numAmount, "inference");
+                    console.log(`✅ Successfully transferred ${numAmount} OG to inference sub-account (reversed params)`);
+                } catch (error2) {
+                    console.log("Method 2 failed:", error2 instanceof Error ? error2.message : "Unknown error");
+
+                    try {
+                        // Method 3: Try with string amount
+                        console.log(`Trying transferFund("inference", "${numAmount}")...`);
+                        await this.broker.ledger.transferFund("inference", numAmount.toString());
+                        console.log(`✅ Successfully transferred ${numAmount} OG to inference sub-account (string amount)`);
+                    } catch (error3) {
+                        console.log("Method 3 failed:", error3 instanceof Error ? error3.message : "Unknown error");
+
+                        try {
+                            // Method 4: Try with BigInt amount
+                            console.log(`Trying transferFund("inference", BigInt)...`);
+                            const weiAmount = BigInt(Math.floor(numAmount * 1e18));
+                            await this.broker.ledger.transferFund("inference", weiAmount);
+                            console.log(`✅ Successfully transferred ${numAmount} OG to inference sub-account (BigInt amount)`);
+                        } catch (error4) {
+                            console.log("Method 4 failed:", error4 instanceof Error ? error4.message : "Unknown error");
+
+                            try {
+                                // Method 5: Try with ethers format
+                                console.log(`Trying transferFund("inference", ethers format)...`);
+                                const ethersAmount = ethers.parseEther(numAmount.toString());
+                                await this.broker.ledger.transferFund("inference", ethersAmount);
+                                console.log(`✅ Successfully transferred ${numAmount} OG to inference sub-account (ethers format)`);
+                            } catch (error5) {
+                                console.log("Method 5 failed:", error5 instanceof Error ? error5.message : "Unknown error");
+
+                                // Method 6: Try to inspect the method signature
+                                console.log("💡 Inspecting transferFund method signature...");
+                                console.log("transferFund method:", this.broker.ledger.transferFund);
+                                console.log("transferFund toString:", this.broker.ledger.transferFund.toString());
+
+                                throw new Error(`All transferFund methods failed. This appears to be a bug in SDK v0.4.4. Last error: ${error5 instanceof Error ? error5.message : "Unknown error"}`);
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Wait for transaction to settle
+            console.log("⏳ Waiting for transaction to settle...");
+            await new Promise(resolve => setTimeout(resolve, 3000));
+
+            // Check balance after transfer
+            const newBalance = await this.getAccountBalance();
+            console.log(`📊 New main account balance: ${newBalance?.balance || "0.0000"} OG`);
+            console.log(`📊 New available balance: ${newBalance?.available || "0.0000"} OG`);
+            console.log(`📊 New locked balance: ${newBalance?.locked || "0.0000"} OG`);
+
+            // Verify the transfer worked by checking if locked balance increased
+            const oldLocked = parseFloat(balance?.locked || "0");
+            const newLocked = parseFloat(newBalance?.locked || "0");
+
+            if (newLocked > oldLocked) {
+                console.log(`✅ Transfer successful! Locked balance increased from ${oldLocked} to ${newLocked} OG`);
+                return true;
+            } else {
+                console.log(`⚠️ Transfer may not have worked. Locked balance unchanged: ${oldLocked} OG`);
+                return false;
+            }
+
+        } catch (error) {
+            console.error("❌ Failed to transfer funds to inference:", error);
+            console.error("Error details:", {
+                message: error instanceof Error ? error.message : "Unknown error",
+                name: error instanceof Error ? error.name : "Error",
+                stack: error instanceof Error ? error.stack : undefined
+            });
+
+            if (error instanceof Error) {
+                const errorMsg = error.message.toLowerCase();
+                if (errorMsg.includes('transferfund methods failed')) {
+                    console.error("\n💡 FIX: transferFund method is broken in 0G SDK v0.4.4");
+                    console.error("   → This is a confirmed bug in the current SDK version");
+                    console.error("   → The method signature or parameter handling is incorrect");
+                    console.error("   → Try making a direct inference request instead");
+                    console.error("   → Or wait for SDK update from 0G team");
+                } else if (errorMsg.includes('insufficient')) {
+                    console.error("\n💡 FIX: Insufficient balance");
+                    console.error("   → Add more funds to main account first");
+                    console.error("   → Check available balance vs locked balance");
+                } else if (errorMsg.includes('circuit breaker')) {
+                    console.error("\n💡 FIX: Network is overloaded (circuit breaker)");
+                    console.error("   → Wait 1-2 minutes and try again");
+                } else if (errorMsg.includes('maxpriorityfee') || errorMsg.includes('eip-1559')) {
+                    console.error("\n💡 FIX: Gas pricing issue (EIP-1559 not supported)");
+                    console.error("   → This is a known issue with 0G testnet");
+                    console.error("   → Try again in a few moments");
+                } else {
+                    console.error("\n💡 General troubleshooting:");
+                    console.error("   → Verify you're on 0G testnet (chain ID: 16602)");
+                    console.error("   → Ensure you have enough ETH for gas");
+                    console.error("   → Check if inference sub-account exists");
+                }
+            }
+            return false;
+        }
+    }
+
     async checkInferenceSubAccountStatus(): Promise<void> {
         if (!this.broker) {
             console.error("Cannot check sub-account status: broker not initialized");

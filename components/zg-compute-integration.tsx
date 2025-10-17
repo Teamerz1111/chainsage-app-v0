@@ -117,7 +117,7 @@ export function ZGComputeIntegration() {
 3. **Account funding** - You may need to fund your account with more OG tokens
 4. **Service maintenance** - The 0G Compute service might be under maintenance
 
-**What you asked:** "${testMessage}"
+**What you asked:** "${chatMessage}"
 
 **Fallback response:** As a blockchain security expert, I can tell you that blockchain security involves protecting digital assets, smart contracts, and user data from various threats including:
 - Smart contract vulnerabilities
@@ -255,9 +255,9 @@ For real-time AI assistance, please try again later or check the 0G Compute netw
         setError(null)
 
         try {
-            console.log(`Starting allocate to inference process with amount: ${amount}...`);
-            const success = await zgComputeService.allocateFundsToInference(amount)
-            console.log("Allocate to inference result:", success);
+            console.log(`Starting fund transfer to inference sub-account with amount: ${amount}...`);
+            const success = await zgComputeService.transferFundsToInference(amount)
+            console.log("Transfer to inference result:", success);
 
             if (success) {
                 console.log("Getting updated account balance...");
@@ -266,10 +266,10 @@ For real-time AI assistance, please try again later or check the 0G Compute netw
                 setBalance(accountBalance?.balance || "0.0000 OG")
                 setError(null) // Clear any previous errors
             } else {
-                setError("Failed to allocate funds to inference. Check console for details.")
+                setError("Failed to transfer funds to inference sub-account. Check console for details.")
             }
         } catch (err) {
-            console.error("Allocate to inference error:", err);
+            console.error("Transfer to inference error:", err);
             setError(err instanceof Error ? err.message : "Unknown error occurred")
         } finally {
             setIsLoading(false)
@@ -403,6 +403,51 @@ For real-time AI assistance, please try again later or check the 0G Compute netw
                                 </Button>
                             </div>
                             <div className="mt-3 space-y-2">
+                                <div className="flex gap-2">
+                                    <Button
+                                        onClick={() => zgComputeService?.transferFundsToInference(0.5)}
+                                        disabled={isLoading}
+                                        size="sm"
+                                        className="bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30"
+                                    >
+                                        {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Transfer 0.5 OG to Inference"}
+                                    </Button>
+                                    <Button
+                                        onClick={() => zgComputeService?.transferFundsToInference(1.0)}
+                                        disabled={isLoading}
+                                        size="sm"
+                                        className="bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30"
+                                    >
+                                        {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Transfer 1.0 OG to Inference"}
+                                    </Button>
+                                </div>
+                                <p className="text-xs text-emerald-400">
+                                    💡 This transfers funds from main account to inference sub-account (fixes "insufficient balance" error)
+                                </p>
+                                <Button
+                                    onClick={() => zgComputeService?.retrieveFunds("inference")}
+                                    disabled={isLoading}
+                                    size="sm"
+                                    className="bg-orange-500/20 text-orange-400 hover:bg-orange-500/30"
+                                >
+                                    {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Initialize Sub-Account First"}
+                                </Button>
+                                <p className="text-xs text-orange-400">
+                                    💡 Try this first if transfer fails - initializes the inference sub-account
+                                </p>
+                                <Button
+                                    onClick={() => zgComputeService?.chat({ message: "test direct inference", context: { userRole: "user" } })}
+                                    disabled={isLoading}
+                                    size="sm"
+                                    className="bg-green-500/20 text-green-400 hover:bg-green-500/30"
+                                >
+                                    {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Test Direct Inference (Bypass Transfer)"}
+                                </Button>
+                                <p className="text-xs text-green-400">
+                                    💡 This bypasses transferFund and tests inference directly (may auto-fund sub-account)
+                                </p>
+                            </div>
+                            <div className="mt-3 space-y-2">
                                 <Button
                                     onClick={acknowledgeProviders}
                                     disabled={isLoading}
@@ -422,7 +467,7 @@ For real-time AI assistance, please try again later or check the 0G Compute netw
                                         size="sm"
                                         className="bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30"
                                     >
-                                        {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Initialize Inference Sub-Account"}
+                                        {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Transfer 0.5 OG to Inference"}
                                     </Button>
                                     <Button
                                         onClick={() => allocateToInference(0.1)}
@@ -430,7 +475,7 @@ For real-time AI assistance, please try again later or check the 0G Compute netw
                                         size="sm"
                                         className="bg-blue-500/20 text-blue-400 hover:bg-blue-500/30"
                                     >
-                                        {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Test Sub-Account Init"}
+                                        {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Transfer 0.1 OG to Inference"}
                                     </Button>
                                 </div>
                                 <div className="mt-2 flex gap-2">

@@ -27,11 +27,12 @@ const nextConfig = {
         os: false,
         path: false,
         child_process: false,
-        'fs/promises': false,
-      }
+        "fs/promises": false,
+        readline: false,
+      };
     }
-    return config
+    return config;
   },
-}
+};
 
-export default nextConfig
+export default nextConfig;
