@@ -2,6 +2,7 @@ import dynamic from 'next/dynamic'
 import { Navbar } from "@/components/navbar"
 import { HeroSection } from "@/components/hero-section"
 import { Footer } from "@/components/footer"
+import { WalletConnectBanner } from "@/components/wallet-connect-banner"
 
 // Lazy load heavy components for better initial page load
 const ActivityFeed = dynamic(() => import('@/components/activity-feed').then(mod => ({ default: mod.ActivityFeed })), {
@@ -26,6 +27,9 @@ export default function Home() {
       <Navbar />
       <main className="pt-16">
         <HeroSection />
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <WalletConnectBanner />
+        </div>
         <ActivityFeed />
         <RiskFeed />
         <SearchPanel />
