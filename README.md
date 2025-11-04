@@ -62,6 +62,18 @@ Most blockchain explorers just show you data. We analyze it. Using 0G Compute Ne
 - **Backend API:** https://backend-3o2x.onrender.com
 - **Network:** 0G Mainnet (Chain ID: 16661)
 
+### 📜 Smart Contract (0G Mainnet)
+- **Contract Address:** `0x65259ad0C0872E9EC83b8fcd0a8541BC7015C0978`
+- **Block Explorer:** [View on ChainScan](https://chainscan.0g.ai/address/0x65259ad0C0872E9EC83b8fcd0a8541BC7015C0978)
+- **Deployment Block:** 11,555,978
+- **Deployment Date:** November 4, 2025
+
+**Contract Features:**
+- ✅ Watchlist management (add/remove wallets)
+- ✅ Risk score tracking (0-100 scale)
+- ✅ On-chain data storage
+- ✅ Event-driven updates for real-time monitoring
+
 ### Quick Start (For Users)
 1. Visit https://chainsage-app.vercel.app
 2. Connect your MetaMask wallet
