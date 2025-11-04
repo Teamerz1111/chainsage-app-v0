@@ -1,3 +1,5 @@
+"use client"
+
 import dynamic from 'next/dynamic'
 import { WalletProvider } from "@/contexts/wallet-context"
 
