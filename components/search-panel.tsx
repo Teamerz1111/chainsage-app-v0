@@ -1,8 +1,6 @@
 "use client"
 
-import type React from "react"
-
-import { useState } from "react"
+import React, { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -22,7 +20,7 @@ import {
   ArrowUpRight,
   ImageIcon,
   Droplets,
-} from "lucide-react"
+} from "@/lib/icons"
 import { cn } from "@/lib/utils"
 import { apiService } from "@/lib/api"
 
@@ -142,7 +140,7 @@ const mockSearchResults: Record<string, SearchResult> = {
   },
 }
 
-export function SearchPanel() {
+export const SearchPanel = React.memo(function SearchPanel() {
   const [searchQuery, setSearchQuery] = useState("")
   const [searchResult, setSearchResult] = useState<SearchResult | null>(null)
   const [isSearching, setIsSearching] = useState(false)
@@ -521,4 +519,4 @@ export function SearchPanel() {
       </div>
     </section>
   )
-}
+})
