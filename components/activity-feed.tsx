@@ -115,44 +115,55 @@ export function ActivityFeed() {
         setLoading(true)
         setError(null)
 
-        // Set a timeout for API calls to prevent infinite loading
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('API timeout')), 5000)
-        )
-
-        // Get recent activity data from 0G blockchain
-        const dataPromise = apiService.retrieve0GData({
-          type: 'ai_classification',
-          limit: 20,
-          page: 1
-        })
-
-        const result = await Promise.race([dataPromise, timeoutPromise]) as any
-
-        if (result.error) {
-          setError(result.error)
-          // Fallback to mock data on error
-          setActivities(mockActivityData)
-        } else if (result.data?.logs && result.data.logs.length > 0) {
-          // Transform backend data to frontend format
-          const transformedActivities: ActivityItem[] = result.data.logs.map((log: any, index: number) => ({
-            id: log.transactionHash || `activity_${index}`,
-            type: "transaction" as ActivityType,
-            hash: log.transactionHash,
-            from: log.originalTransaction?.from,
-            to: log.originalTransaction?.to,
-            valueUsd: log.originalTransaction?.value ? parseFloat(log.originalTransaction.value) / 1e18 * 2000 : Math.random() * 10000, // Rough ETH to USD conversion
-            time: log.timestamp ? new Date(log.timestamp).toLocaleString() : "Unknown",
-            chain: "ethereum", // Default to ethereum for now,
-          }))
-          setActivities(transformedActivities)
+        // Fetch real blockchain data using ethers.js
+        const { ethers } = await import('ethers')
+        const provider = new ethers.JsonRpcProvider('https://eth-mainnet.g.alchemy.com/v2/demo')
+        
+        // Get latest block
+        const latestBlockNumber = await provider.getBlockNumber()
+        const block = await provider.getBlock(latestBlockNumber, true)
+        
+        if (block && block.transactions) {
+          // Get transaction details for the first 6 transactions
+          const txPromises = block.transactions.slice(0, 6).map(async (txHash) => {
+            try {
+              const tx = await provider.getTransaction(txHash as string)
+              if (!tx) return null
+              
+              const valueEth = parseFloat(ethers.formatEther(tx.value || 0))
+              const valueUsd = valueEth * 2400 // Rough ETH price
+              
+              return {
+                id: tx.hash,
+                type: "transaction" as ActivityType,
+                hash: tx.hash,
+                from: tx.from,
+                to: tx.to || "Contract Creation",
+                valueUsd: valueUsd,
+                time: "just now",
+                chain: "ethereum",
+              }
+            } catch {
+              return null
+            }
+          })
+          
+          const realActivities = (await Promise.all(txPromises)).filter(Boolean) as ActivityItem[]
+          
+          if (realActivities.length > 0) {
+            setActivities(realActivities)
+            setError(null)
+          } else {
+            setActivities(mockActivityData)
+            setError('Using demo data')
+          }
         } else {
-          // No data available, use mock data
           setActivities(mockActivityData)
+          setError('Using demo data')
         }
       } catch (err) {
-        console.error('Failed to load activities:', err)
-        setError('Using demo data - backend unavailable')
+        console.error('Failed to load real blockchain data:', err)
+        setError('Using demo data')
         setActivities(mockActivityData)
       } finally {
         setLoading(false)
