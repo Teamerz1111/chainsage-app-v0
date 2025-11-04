@@ -1,13 +1,13 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import React, { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Plus, Pin, Trash2, Activity, AlertTriangle, CheckCircle, Clock, ExternalLink, Loader2, BarChart3 } from "lucide-react"
+import { Plus, Pin, Trash2, Activity, AlertTriangle, CheckCircle, Clock, ExternalLink, Loader2, BarChart3 } from "@/lib/icons"
 import { cn } from "@/lib/utils"
 import { apiService } from "@/lib/api"
 import { wsService } from "@/lib/websocket"
@@ -80,7 +80,7 @@ const mockWatchlistData: WatchlistItem[] = [
   // },
 ]
 
-export function WatchlistManagement() {
+export const WatchlistManagement = React.memo(function WatchlistManagement() {
   const [watchlist, setWatchlist] = useState<WatchlistItem[]>([])
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
@@ -130,7 +130,7 @@ export function WatchlistManagement() {
       
       // Update the specific wallet's alert count and last activity
       setWatchlist(prev => prev.map(wallet => {
-        if (wallet.address.toLowerCase() === message.walletAddress?.toLowerCase()) {
+        if (wallet.address.toLowerCase() === message.data?.walletAddress?.toLowerCase()) {
           return {
             ...wallet,
             alertCount: (wallet.alertCount || 0) + 1,
@@ -362,7 +362,7 @@ export function WatchlistManagement() {
       console.error('Failed to analyze wallet:', error)
       setAnalysisResults({
         address,
-        error: error.message || 'Unknown error occurred',
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
         analysis: null,
         walletData: null
       })
@@ -793,4 +793,4 @@ export function WatchlistManagement() {
       </Dialog>
     </Card>
   )
-}
+})
