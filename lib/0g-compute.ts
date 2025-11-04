@@ -30,10 +30,26 @@ export interface TransactionAnalysisPrompt {
 
 export interface WalletAnalysisPrompt {
     walletAddress: string
+    transactionHistory?: Array<{
+        hash: string
+        from: string
+        to: string
+        value: string
+        timestamp: number
+        blockNumber?: number
+    }>
     context: {
         networkId?: number
         includeTransactions?: boolean
         maxTransactions?: number
+        riskFactors?: {
+            transactionVolume: number
+            frequencyScore: number
+            contractRisk: number
+            networkReputation: number
+            walletAge: number
+            behaviorPattern: number
+        }
     }
 }
 
