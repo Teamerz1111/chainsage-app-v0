@@ -62,6 +62,7 @@ import { useState, useEffect } from "react"
 import { ChatPrompt } from "@/lib/0g-compute"
 import { wsService } from "@/lib/websocket"
 import { cn } from "@/lib/utils"
+import { apiService } from "@/lib/api"
 
 export const AdminDashboard = React.memo(function AdminDashboard() {
   const { address } = useWallet()
