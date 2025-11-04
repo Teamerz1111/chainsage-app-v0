@@ -412,6 +412,11 @@ export function ActivityFeed() {
                           variant="outline"
                           size="sm"
                           className="hover:bg-primary/10 hover:border-primary/50 bg-transparent"
+                          onClick={() => {
+                            if (activity.hash) {
+                              window.open(`https://etherscan.io/tx/${activity.hash}`, '_blank')
+                            }
+                          }}
                         >
                           <ExternalLink className="h-4 w-4 mr-2" />
                           View on Explorer

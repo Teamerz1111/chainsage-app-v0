@@ -332,15 +332,46 @@ export const SearchPanel = React.memo(function SearchPanel() {
                       onClick={() => copyToClipboard(searchResult.address)}
                       className="hover:bg-accent/20 bg-transparent"
                     >
-                      <Copy className="h-4 w-4" />
+                      <Copy className="h-4 w-4 mr-2" />
+                      Copy Address
                     </Button>
                     <Button
                       variant="outline"
                       size="sm"
+                      onClick={async () => {
+                        try {
+                          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/wallet/monitor/${searchResult.address}`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ 
+                              threshold: 1000,
+                              type: 'wallet',
+                              chainId: '1',
+                              label: `Wallet ${searchResult.address.slice(0, 8)}...`
+                            }),
+                          })
+                          if (response.ok) {
+                            alert('Added to watchlist!')
+                          } else {
+                            alert('Failed to add to watchlist')
+                          }
+                        } catch (error) {
+                          console.error('Failed to add to watchlist:', error)
+                          alert('Failed to add to watchlist')
+                        }
+                      }}
                       className="hover:bg-primary/10 hover:border-primary/50 bg-transparent"
                     >
                       <Plus className="h-4 w-4 mr-2" />
                       Add to Watchlist
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => window.open(`https://etherscan.io/address/${searchResult.address}`, '_blank')}
+                      className="hover:bg-accent/20 bg-transparent"
+                    >
+                      <ExternalLink className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>
