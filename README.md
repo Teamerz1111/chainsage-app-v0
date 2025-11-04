@@ -1,417 +1,571 @@
-# 0g-Sygna - AI-Powered Blockchain Intelligence
+# ChainSage (0g-Sygna) - AI-Powered Blockchain Intelligence
 
-> Real-time blockchain monitoring meets AI-powered risk detection on the 0G Network
+[![Live Demo](https://img.shields.io/badge/Live-Demo-brightgreen)](https://chainsage-app.vercel.app)
+[![0G Mainnet](https://img.shields.io/badge/0G-Mainnet-blue)](https://chainscan.0g.ai/address/0x65259ad0C0872E9EC83b8fcd0a8541BC7015C0978)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-0g-Sygna is your intelligent companion for navigating the blockchain. We've built a platform that watches the chain 24/7, analyzing transactions in real-time and alerting you to potential risks before they become problems. Think of it as having a security analyst working around the clock, powered by 0G's decentralized AI infrastructure.
+> **Real-time blockchain monitoring meets AI-powered risk detection on the 0G Network**
 
-**🔗 Live Demo:** https://chainsage-app.vercel.app
+Built for **0G WaveHack 5th Wave** | Team: **Teamerz1111**
 
-**📺 5-Minute Demo Video:** [Coming Soon]
+---
 
-**🐦 Twitter Thread:** [Link to @0G_Builders tagged thread]
+## 🚀 Quick Links
 
-## What Makes 0g-Sygna Different?
+- **🌐 Live Application:** https://chainsage-app.vercel.app
+- **📜 Smart Contract:** [0x65259ad0C0872E9EC83b8fcd0a8541BC7015C0978](https://chainscan.0g.ai/address/0x65259ad0C0872E9EC83b8fcd0a8541BC7015C0978)
+- **🐦 Twitter Thread:** [PASTE YOUR X LINK - Tag @0G_Builders]
+- **🔗 Backend API:** https://backend-3o2x.onrender.com
+- **📦 Contracts Repo:** https://github.com/Teamerz1111/contracts
+- **🖥️ Backend Repo:** https://github.com/Teamerz1111/backend
 
-### 🎯 Our Unique Approach
-Most blockchain explorers just show you data. We analyze it. Using 0G Compute Network's decentralized AI, we process every transaction through advanced risk models to give you actionable insights, not just numbers.
+---
 
-### ✨ Key Features
+## 📋 Table of Contents
 
-**🔍 Smart Monitoring**
-- Watch any wallet address in real-time
-- Get instant alerts when something unusual happens
-- Track transaction patterns and volumes
+- [Overview](#overview)
+- [The Problem We Solve](#the-problem-we-solve)
+- [Our Solution](#our-solution)
+- [Unique Selling Points](#unique-selling-points)
+- [0G Network Integration](#0g-network-integration)
+- [Smart Contract Deployment](#smart-contract-deployment)
+- [Key Features](#key-features)
+- [Architecture](#architecture)
+- [Tech Stack](#tech-stack)
+- [Getting Started](#getting-started)
+- [Usage Guide](#usage-guide)
+- [Testing](#testing)
+- [Roadmap](#roadmap)
+- [Contributing](#contributing)
+- [License](#license)
+- [Acknowledgments](#acknowledgments)
 
-**🤖 AI-Powered Risk Analysis**
-- Automatic risk scoring using 0G Compute Network
+---
+
+## 🎯 Overview
+
+ChainSage is an **AI-powered blockchain monitoring platform** that provides real-time security intelligence for crypto users. Unlike traditional blockchain explorers that only display raw transaction data, ChainSage analyzes every transaction using **0G Compute Network's decentralized AI** to detect risks, suspicious patterns, and anomalies before they become problems.
+
+Think of it as having a **24/7 security analyst** watching the blockchain for you, powered by 0G's decentralized infrastructure.
+
+### 🏆 WaveHack 5th Wave Submission
+
+This project demonstrates the full power of the 0G ecosystem:
+- ✅ **0G Compute Network** for decentralized AI processing
+- ✅ **0G Mainnet** for smart contract deployment (Chain ID: 16661)
+- ✅ **Production-ready** application deployed and accessible
+- ✅ **Real-world utility** for blockchain security and monitoring
+
+---
+
+## 🔍 The Problem We Solve
+
+### Current Challenges in Blockchain Monitoring:
+
+1. **Data Overload:** Blockchain explorers show raw transaction data without context or analysis
+2. **Manual Analysis Required:** Users must manually investigate suspicious activity
+3. **Reactive Security:** Most tools alert you AFTER problems occur
+4. **Centralized Dependencies:** Traditional monitoring relies on centralized APIs with rate limits
+5. **No Risk Intelligence:** No automated risk scoring or pattern detection
+6. **Poor UX:** Complex interfaces requiring blockchain expertise
+
+### Real-World Impact:
+
+- Users lose funds to scams and hacks that could have been detected
+- Traders miss suspicious patterns in wallet activity
+- DeFi users can't easily assess counterparty risk
+- Security researchers lack automated analysis tools
+
+---
+
+## 💡 Our Solution
+
+ChainSage combines **decentralized AI** with **on-chain smart contracts** to provide:
+
+### 🤖 AI-Powered Risk Analysis
+- Automatic risk scoring (0-100 scale) for every transaction
 - Pattern detection for suspicious activity
-- Natural language explanations of what's happening
+- Natural language explanations of detected risks
+- Real-time anomaly detection
 
-**📊 Beautiful Dashboard**
-- Clean, intuitive interface (no blockchain expertise needed)
-- Real-time activity feed with AI insights
-- Customizable watchlists for addresses you care about
+### 📊 Real-Time Monitoring
+- Watch any wallet address 24/7
+- Instant alerts for unusual activity
+- WebSocket-powered live updates
+- Transaction pattern analysis
 
-**🔐 Built on 0G Infrastructure**
-- Decentralized AI via 0G Compute Network
-- Secure, wallet-based authentication
-- No API keys or rate limits to worry about
+### 🔗 On-Chain Watchlist Management
+- Store watchlists directly on 0G Mainnet
+- Trustless, persistent data storage
+- Event-driven real-time synchronization
+- Decentralized access control
 
-## Tech Stack
+### 🎨 Beautiful User Experience
+- Clean, intuitive cyberpunk-themed UI
+- No blockchain expertise required
+- One-click wallet connection
+- Instant insights without configuration
+
+---
+
+## ⭐ Unique Selling Points
+
+### What Makes ChainSage Stand Out in the 0G Ecosystem?
+
+#### 1. **Truly Decentralized AI**
+Unlike competitors using centralized AI APIs (OpenAI, Anthropic), ChainSage leverages **0G Compute Network** for:
+- No single point of failure
+- Censorship-resistant analysis
+- Community-owned infrastructure
+- Transparent, on-chain operations
+
+#### 2. **On-Chain Data Persistence**
+Watchlists and risk scores stored on **0G Mainnet** ensure:
+- Trustless access to your data
+- No centralized database vulnerabilities
+- Permanent, immutable records
+- Cross-platform accessibility
+
+#### 3. **No Rate Limits**
+By using decentralized infrastructure:
+- Analyze unlimited transactions
+- No API key management
+- No subscription tiers
+- Pay only for what you use
+
+#### 4. **Wallet-Based Authentication**
+Your MetaMask wallet is your identity:
+- No usernames or passwords
+- No email verification
+- No personal data collection
+- Privacy-preserving by design
+
+#### 5. **Production-Ready Today**
+Not a prototype or MVP:
+- Fully deployed and accessible
+- Real-time monitoring working
+- AI analysis functional
+- Smart contracts verified on-chain
+
+---
+
+## 🌐 0G Network Integration
+
+### How We Use 0G's Infrastructure
+
+#### **0G Compute Network**
+```
+Purpose: Decentralized AI Processing
+Models: Llama 3.3 70B, DeepSeek R1
+Authentication: Wallet-based (no API keys)
+Pricing: Pay-per-use
+Benefits: No rate limits, censorship-resistant
+```
+
+**Implementation:**
+- User connects MetaMask wallet
+- App initializes 0G Compute client
+- Transaction data sent to decentralized AI nodes
+- Risk analysis returned in real-time
+- Results displayed with natural language explanations
+
+#### **0G Mainnet (Chain ID: 16661)**
+```
+Purpose: Smart Contract Deployment
+Contract: ChainSageMonitor
+Address: 0x65259ad0C0872E9EC83b8fcd0a8541BC7015C0978
+Functions: Watchlist management, risk scoring
+Events: Real-time updates via WebSocket
+```
+
+**Implementation:**
+- Smart contract stores user watchlists
+- Risk scores tracked on-chain
+- Event emissions trigger frontend updates
+- Trustless data access for all users
+
+---
+
+## 📜 Smart Contract Deployment
+
+### Deployment Details
+
+**Contract Name:** ChainSageMonitor  
+**Network:** 0G Mainnet  
+**Chain ID:** 16661  
+**Contract Address:** `0x65259ad0C0872E9EC83b8fcd0a8541BC7015C0978`
+
+**Block Explorer:** [View on ChainScan](https://chainscan.0g.ai/address/0x65259ad0C0872E9EC83b8fcd0a8541BC7015C0978)
+
+**Deployment Transaction:** [0x2c8d5689101Db0a13c44e5793f57b4951f63690d7f7d9c8db95c9B6ec7a94ac5](https://chainscan.0g.ai/tx/0x2c8d5689101Db0a13c44e5793f57b4951f63690d7f7d9c8db95c9B6ec7a94ac5)
+
+**Deployment Block:** 11,555,978  
+**Deployment Date:** November 4, 2025  
+**Gas Used:** 0.006044652010578141 0G
+
+### Contract Functions
+
+#### Write Functions (Require Gas)
+```solidity
+// Add wallet to personal watchlist
+function addToWatchlist(address _wallet, string memory _label) external
+
+// Remove wallet from watchlist
+function removeFromWatchlist(address _wallet) external
+
+// Update risk score (owner only)
+function updateRiskScore(address _wallet, uint256 _score) external
+```
+
+#### Read Functions (Free)
+```solidity
+// Get user's complete watchlist
+function getUserWatchlist(address _user) external view returns (address[] memory)
+
+// Get watchlist entry details
+function getWatchlistEntry(address _user, address _wallet) external view returns (WatchlistEntry memory)
+
+// Get risk score for any wallet
+function getRiskScore(address _wallet) external view returns (uint256)
+
+// Get platform statistics
+function getPlatformStats() external view returns (uint256 users, uint256 watchlists)
+```
+
+### Contract Events
+```solidity
+event WalletAdded(address indexed user, address indexed wallet, string label, uint256 timestamp);
+event WalletRemoved(address indexed user, address indexed wallet, uint256 timestamp);
+event RiskScoreUpdated(address indexed wallet, uint256 oldScore, uint256 newScore, uint256 timestamp);
+```
+
+---
+
+## ✨ Key Features
+
+### 1. Real-Time Wallet Monitoring
+- Monitor any Ethereum address
+- Live transaction tracking
+- Instant notifications via WebSocket
+- Historical activity analysis
+
+### 2. AI-Powered Risk Detection
+- Automatic risk scoring (0-100 scale)
+- Pattern recognition for suspicious activity
+- Natural language risk explanations
+- Anomaly detection algorithms
+
+### 3. Watchlist Management
+- Add unlimited wallet addresses
+- Custom labels for easy identification
+- On-chain storage via smart contract
+- Cross-device synchronization
+
+### 4. Activity Feed
+- Real-time transaction updates
+- Risk level indicators (Low/Medium/High/Critical)
+- Transaction details and context
+- Filter by risk level
+
+### 5. Admin Dashboard
+- Manage all watchlists in one place
+- View platform statistics
+- Risk score overview
+- Quick actions for common tasks
+
+### 6. Beautiful UI/UX
+- Cyberpunk-themed design
+- Smooth animations and transitions
+- Responsive layout (mobile-friendly)
+- Intuitive navigation
+
+---
+
+## 🏗️ Architecture
+
+### System Overview
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                        USER INTERFACE                        │
+│                    (Next.js 15 + React 19)                   │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
+│  │   Activity   │  │  Risk Feed   │  │    Admin     │      │
+│  │     Feed     │  │              │  │  Dashboard   │      │
+│  └──────────────┘  └──────────────┘  └──────────────┘      │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│                      BACKEND SERVICES                        │
+│                  (Node.js + Express + WS)                    │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
+│  │   REST API   │  │   WebSocket  │  │    Chain     │      │
+│  │    Server    │  │    Server    │  │   Monitor    │      │
+│  └──────────────┘  └──────────────┘  └──────────────┘      │
+└─────────────────────────────────────────────────────────────┘
+         │                    │                    │
+         ▼                    ▼                    ▼
+┌──────────────┐    ┌──────────────┐    ┌──────────────┐
+│  0G Compute  │    │  0G Mainnet  │    │  Blockchain  │
+│   Network    │    │   Contract   │    │     RPCs     │
+│  (AI Models) │    │  (Watchlist) │    │   (Ethereum) │
+└──────────────┘    └──────────────┘    └──────────────┘
+```
+
+### Data Flow
+
+1. **User Action** → Frontend captures user input (search address, add to watchlist)
+2. **API Request** → Frontend sends request to backend API
+3. **Blockchain Query** → Backend fetches transaction data from blockchain RPCs
+4. **AI Analysis** → Transaction data sent to 0G Compute for risk analysis
+5. **Smart Contract** → Watchlist data stored on 0G Mainnet contract
+6. **Real-Time Updates** → WebSocket pushes updates to connected clients
+7. **UI Rendering** → Frontend displays results with risk scores and insights
+
+---
+
+## 🛠️ Tech Stack
 
 ### Frontend
+- **Framework:** Next.js 15 (App Router)
+- **UI Library:** React 19
+- **Styling:** Tailwind CSS 4.1
+- **Components:** Radix UI
+- **State Management:** React Context + Hooks
+- **Web3:** ethers.js v6
+- **Charts:** Recharts
+- **Forms:** React Hook Form + Zod
+- **Icons:** Lucide React
+- **Deployment:** Vercel
 
-- **Framework**: Next.js 15 with React 19
-- **Styling**: Tailwind CSS 4.1 with custom animations
-- **UI Components**: Radix UI primitives with custom theming
-- **Charts**: Recharts for data visualization
-- **Forms**: React Hook Form with Zod validation
-- **Icons**: Lucide React
-- **Deployment**: Vercel
+### Backend
+- **Runtime:** Node.js 20
+- **Framework:** Express.js
+- **WebSocket:** ws library
+- **Security:** Helmet, CORS
+- **Blockchain:** ethers.js
+- **Deployment:** Render
 
-### Backend & Storage
-
-- **Data Storage**: 0g decentralized storage network
-- **Backend API**: See [backend](https://github.com/Teamerz1111/backend)
-- **Architecture**: Decentralized data management with secure blockchain integration
-
-## 🚀 Live Deployment
-
-### Production URLs
-- **Frontend:** https://chainsage-app.vercel.app
-- **Backend API:** https://backend-3o2x.onrender.com
+### Smart Contracts
+- **Language:** Solidity 0.8.20
+- **Development:** Remix IDE
 - **Network:** 0G Mainnet (Chain ID: 16661)
+- **Standards:** ERC-20 compatible patterns
 
-### 📜 Smart Contract (0G Mainnet)
-- **Contract Address:** `0x65259ad0C0872E9EC83b8fcd0a8541BC7015C0978`
-- **Block Explorer:** [View on ChainScan](https://chainscan.0g.ai/address/0x65259ad0C0872E9EC83b8fcd0a8541BC7015C0978)
-- **Deployment Block:** 11,555,978
-- **Deployment Date:** November 4, 2025
+### AI & Blockchain
+- **AI Provider:** 0G Compute Network
+- **AI Models:** Llama 3.3 70B, DeepSeek R1
+- **Blockchain:** 0G Mainnet, Ethereum
+- **RPC:** 0G RPC (https://evmrpc.0g.ai)
 
-**Contract Features:**
-- ✅ Watchlist management (add/remove wallets)
-- ✅ Risk score tracking (0-100 scale)
-- ✅ On-chain data storage
-- ✅ Event-driven updates for real-time monitoring
+---
 
-### Quick Start (For Users)
-1. Visit https://chainsage-app.vercel.app
-2. Connect your MetaMask wallet
-3. Start monitoring wallets immediately - no setup needed!
+## 🚀 Getting Started
 
-## 🛠️ Local Development Setup
+### Prerequisites
 
-Want to run it locally or contribute? Here's how:
+- Node.js 18+ installed
+- MetaMask browser extension
+- 0.1 0G tokens (for AI features)
+- Git
 
-### What You'll Need
-- Node.js 18 or higher
-- A MetaMask wallet with some 0G tokens for AI features
-- Git (obviously)
-
-### Getting Started
+### Installation
 
 ```bash
-# Clone the repo
+# Clone the repository
 git clone https://github.com/Teamerz1111/chainsage-app-v0.git
 cd chainsage-app-v0
 
 # Install dependencies
 npm install
 
-# Start the dev server
+# Start development server
 npm run dev
 
 # Open http://localhost:3000
 ```
 
-That's it! The app will connect to our production backend automatically. If you want to run your own backend, check out the [backend repo](https://github.com/Teamerz1111/backend).
-
-### Available Scripts
-
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm run start` - Start production server
-- `npm run lint` - Run ESLint
-
-## Project Structure
-
-```
-0g-Sygna-app-v0/
-├── app/                    # Next.js app directory
-│   ├── admin/             # Admin dashboard pages
-│   ├── globals.css        # Global styles
-│   ├── layout.tsx         # Root layout
-│   ├── loading.tsx        # Loading component
-│   └── page.tsx           # Home page
-├── components/            # React components
-│   ├── ui/               # Reusable UI components
-│   ├── activity-feed.tsx # Activity monitoring
-│   ├── admin-dashboard.tsx # Admin interface
-│   ├── hero-section.tsx  # Landing page hero
-│   ├── navbar.tsx        # Navigation
-│   ├── risk-feed.tsx     # Risk alerts
-│   └── ...               # Other components
-├── contexts/             # React contexts
-│   └── wallet-context.tsx # Wallet state management
-├── hooks/                # Custom React hooks
-├── lib/                  # Utilities and configurations
-├── public/               # Static assets
-├── styles/               # Additional CSS files
-└── types/                # TypeScript type definitions
-```
-
-## Key Components
-
-### Dashboard Features
-
-- **Activity Feed** (`components/activity-feed.tsx`) - Real-time transaction monitoring
-- **Risk Feed** (`components/risk-feed.tsx`) - Risk alerts and scoring
-- **Admin Dashboard** (`components/admin-dashboard.tsx`) - Management interface
-- **Watchlist Management** - Track specific addresses and contracts
-
-### UI Components
-
-Built with Radix UI primitives and custom styling:
-
-- Forms, dialogs, dropdowns, and navigation
-- Custom theming with dark/light mode support
-- Matrix-style animations and cyberpunk aesthetic
-
-## ⚙️ Configuration
-
 ### Environment Variables (Optional)
 
-The app works out of the box with our production backend, but you can customize it:
+Create `.env.local` if running your own backend:
 
 ```env
-# Only needed if running your own backend
-NEXT_PUBLIC_API_URL=https://your-backend.com
-NEXT_PUBLIC_WS_URL=wss://your-backend.com
+NEXT_PUBLIC_API_URL=https://backend-3o2x.onrender.com
+NEXT_PUBLIC_WS_URL=wss://backend-3o2x.onrender.com
 ```
 
-### 0G Compute Setup
+---
 
-No configuration needed! Just connect your wallet and the app handles everything:
-- Wallet-based authentication (no API keys)
-- Automatic 0G Compute initialization
-- Pay-as-you-go AI analysis
+## 📖 Usage Guide
 
-You'll need about 0.1 0G tokens in your wallet for AI features.
+### For End Users
 
-## 🧠 How We Use 0G Network
+#### Step 1: Connect Wallet
+1. Visit https://chainsage-app.vercel.app
+2. Click "Connect Wallet" in the navbar
+3. Approve MetaMask connection
+4. Ensure you're on 0G Mainnet (Chain ID: 16661)
 
-### 0G Compute Network Integration
+#### Step 2: Search for Addresses
+1. Enter any Ethereum wallet address in the search bar
+2. Click "Analyze" or press Enter
+3. View real-time activity feed with AI risk scores
 
-This is where the magic happens. Instead of using centralized AI APIs (which are expensive and have rate limits), we tap into 0G's decentralized compute network:
+#### Step 3: Add to Watchlist
+1. Click "Add to Watchlist" on any address
+2. Enter a custom label (e.g., "Binance Hot Wallet")
+3. Transaction will be sent to 0G Mainnet
+4. Confirm in MetaMask
 
-**What this means for you:**
-- No rate limits - analyze as many transactions as you want
-- Better AI models (Llama 3.3 70B, DeepSeek R1)
-- Transparent pricing - you only pay for what you use
-- Your wallet is your authentication - no API keys to manage
+#### Step 4: Monitor Activity
+1. Navigate to Admin Dashboard
+2. View all your watchlisted addresses
+3. See real-time updates as transactions occur
+4. Check risk scores and alerts
 
-**How it works:**
-1. Connect your MetaMask wallet
-2. The app automatically initializes 0G Compute
-3. When you analyze a transaction, it's processed by decentralized AI nodes
-4. Results come back in seconds with detailed risk analysis
+### For Developers
 
-### Why 0G Mainnet?
+#### Interacting with Smart Contract
 
-We chose to build on 0G because:
-- **Decentralized AI** - No single point of failure
-- **Cost-effective** - Way cheaper than traditional AI APIs
-- **Scalable** - Can handle high transaction volumes
-- **Secure** - Wallet-based auth means no API keys to leak
+```javascript
+import { ethers } from 'ethers';
 
-### Testing the AI Features
+const CONTRACT_ADDRESS = '0x65259ad0C0872E9EC83b8fcd0a8541BC7015C0978';
+const CONTRACT_ABI = [/* ABI here */];
 
-Want to see the AI in action? Visit `/test-0g` in the app to:
-- Check your 0G Compute connection
-- Test AI chat functionality
-- Run sample risk analyses
-- Monitor your 0G token balance
+// Connect to 0G Mainnet
+const provider = new ethers.JsonRpcProvider('https://evmrpc.0g.ai');
+const signer = await provider.getSigner();
 
-## 📦 Deployment Details
+// Initialize contract
+const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
 
-### Current Production Setup
+// Add to watchlist
+await contract.addToWatchlist(
+  '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb',
+  'Binance Hot Wallet'
+);
 
-**Frontend (Vercel)**
-- Auto-deploys from main branch
-- Global CDN for fast loading
-- Serverless functions for API routes
+// Get watchlist
+const watchlist = await contract.getUserWatchlist(signer.address);
+console.log('My watchlist:', watchlist);
 
-**Backend (Render)**
-- Node.js API server
-- WebSocket support for real-time updates
-- Connected to 0G Mainnet
-
-**0G Network Integration**
-- 0G Compute Network (for AI analysis)
-- 0G Mainnet RPC: https://evmrpc.0g.ai
-- Chain ID: 16661
-
-### Deploy Your Own
-
-Want to fork and deploy your own version?
-
-```bash
-# Build for production
-npm run build
-
-# Deploy to Vercel
-vercel --prod
-
-# Or deploy to any Node.js host
-npm start
+// Get risk score
+const riskScore = await contract.getRiskScore('0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb');
+console.log('Risk score:', riskScore);
 ```
 
-## Architecture
+---
 
-This application follows a decentralized architecture:
-
-- **Frontend**: Next.js application providing the user interface
-- **Backend**: 0g-based service handling blockchain data processing and storage
-- **Storage**: 0g decentralized storage network for secure, scalable data management
-- **Communication**: RESTful APIs and WebSocket connections for real-time updates
-
-### System Architecture Diagram
-
-```mermaid
-graph TB
-    %% External Data Sources
-    subgraph "Blockchain Networks"
-        ETH[Ethereum]
-        POLY[Polygon]
-        BSC[BSC]
-        OTHER[Other Chains]
-    end
-
-    %% Frontend Layer
-    subgraph "Frontend Application"
-        UI[Next.js UI]
-        COMP[React Components]
-        CTX[Contexts & Hooks]
-    end
-
-    %% Backend Services
-    subgraph "0g Backend Services"
-        API[REST API Server]
-        WS[WebSocket Server]
-        PROC[Data Processor]
-        RISK[Risk Engine]
-        MONITOR[Chain Monitor]
-    end
-
-    %% Storage Layer
-    subgraph "0g Decentralized Storage"
-        STORAGE[0g Storage Network]
-        META[Metadata Store]
-        CACHE[Cache Layer]
-    end
-
-    %% External Services
-    subgraph "External Services"
-        RPC[RPC Providers]
-        ORACLE[Price Oracles]
-        AI[AI/ML Services]
-    end
-
-    %% Data Flow Connections
-    ETH -->|Transaction Data| MONITOR
-    POLY -->|Transaction Data| MONITOR
-    BSC -->|Transaction Data| MONITOR
-    OTHER -->|Transaction Data| MONITOR
-
-    RPC -->|Blockchain Data| MONITOR
-    ORACLE -->|Price Data| PROC
-    AI -->|Risk Scoring| RISK
-
-    MONITOR -->|Raw Data| PROC
-    PROC -->|Processed Data| STORAGE
-    PROC -->|Risk Analysis| RISK
-    RISK -->|Risk Scores| STORAGE
-
-    STORAGE -->|Data Retrieval| API
-    STORAGE -->|Real-time Data| WS
-    META -->|Metadata| API
-    CACHE -->|Cached Data| API
-
-    API -->|HTTP/REST| UI
-    WS -->|WebSocket| UI
-    UI -->|User Actions| API
-
-    COMP -.->|State Management| CTX
-    CTX -.->|Context Data| COMP
-
-    %% Styling
-    classDef frontend fill:#e1f5fe,stroke:#01579b,stroke-width:2px
-    classDef backend fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
-    classDef storage fill:#e8f5e8,stroke:#1b5e20,stroke-width:2px
-    classDef blockchain fill:#fff3e0,stroke:#e65100,stroke-width:2px
-    classDef external fill:#fafafa,stroke:#424242,stroke-width:2px
-
-    class UI,COMP,CTX frontend
-    class API,WS,PROC,RISK,MONITOR backend
-    class STORAGE,META,CACHE storage
-    class ETH,POLY,BSC,OTHER blockchain
-    class RPC,ORACLE,AI external
-```
-
-## 🧪 Testing & Usage
-
-### Try It Out
-
-1. **Visit the live app:** https://chainsage-app.vercel.app
-2. **Connect your wallet** (MetaMask recommended)
-3. **Search for any Ethereum address** to see its activity
-4. **Add addresses to your watchlist** for continuous monitoring
-5. **Check the admin dashboard** to manage your watchlists
+## 🧪 Testing
 
 ### Sample Addresses for Testing
 
-Want to see the AI in action? Try monitoring these high-activity wallets:
-- Binance Hot Wallet: `0x28C6c06298d514Db089934071355E5743bf21d60`
-- Coinbase: `0x71660c4005BA85c37ccec55d0C4493E66Fe775d3`
+Try monitoring these high-activity wallets:
 
-These addresses have lots of transactions, so you'll see the risk analysis working in real-time.
+```
+Binance Hot Wallet: 0x28C6c06298d514Db089934071355E5743bf21d60
+Coinbase: 0x71660c4005BA85c37ccec55d0C4493E66Fe775d3
+Uniswap Router: 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D
+```
 
-### What to Look For
+### Testing Checklist
 
-- **Activity Feed:** Real-time transaction updates
-- **Risk Scores:** AI-generated risk levels (low/medium/high/critical)
-- **Anomaly Detection:** Unusual patterns highlighted automatically
-- **Real-time Alerts:** WebSocket notifications for watchlist activity
+- [ ] Connect MetaMask to 0G Mainnet
+- [ ] Search for a wallet address
+- [ ] View AI risk analysis
+- [ ] Add address to watchlist (requires 0G tokens)
+- [ ] Check Admin Dashboard
+- [ ] Verify real-time updates
+- [ ] Test on mobile device
+
+---
 
 ## 🗺️ Roadmap
 
-### What's Next for 0g-Sygna
+### Phase 1: Foundation (Completed ✅)
+- [x] Core monitoring functionality
+- [x] 0G Compute integration
+- [x] Smart contract deployment
+- [x] Frontend UI/UX
+- [x] Real-time WebSocket updates
+- [x] Production deployment
 
-We're just getting started. Here's what we're planning:
-
-**Short-term (Next 2-3 months)**
+### Phase 2: Enhancement (Next 2-3 months)
 - [ ] Multi-chain support (Polygon, BSC, Arbitrum)
-- [ ] Advanced risk models with historical pattern analysis
-- [ ] Email/Telegram notifications for watchlist alerts
-- [ ] Portfolio tracking and analytics
+- [ ] Advanced risk models with ML
+- [ ] Email/Telegram notifications
+- [ ] Portfolio tracking
+- [ ] Historical data analysis
+- [ ] Mobile-responsive improvements
 
-**Medium-term (3-6 months)**
+### Phase 3: Expansion (3-6 months)
 - [ ] 0G Storage integration for historical data
 - [ ] Smart contract risk analysis
 - [ ] DeFi protocol monitoring
 - [ ] Mobile app (React Native)
-
-**Long-term (6+ months)**
-- [ ] Community-driven risk models
 - [ ] API for developers
+- [ ] Community risk models
+
+### Phase 4: Ecosystem (6+ months)
 - [ ] Browser extension
 - [ ] Integration with popular wallets
-
-## 🤝 Contributing
-
-We'd love your help making 0g-Sygna better! Here's how:
-
-1. Fork the repo
-2. Create a feature branch (`git checkout -b cool-new-feature`)
-3. Make your changes
-4. Test thoroughly
-5. Submit a pull request
-
-Found a bug? Open an issue and we'll jump on it.
-
-## 📄 License
-
-MIT License - feel free to use this project however you'd like!
-
-## 🙏 Acknowledgments
-
-- Built for the 0G WaveHack 5th Wave
-- Powered by 0G Compute Network
-- Thanks to the 0G team for their support
-- Shoutout to the blockchain dev community
+- [ ] DAO governance for risk models
+- [ ] Staking and rewards program
+- [ ] Enterprise features
+- [ ] Multi-language support
 
 ---
 
-**Built with ❤️ on the 0G Network**
+## 🤝 Contributing
 
-Questions? Reach out on Twitter [@0G_Builders](https://twitter.com/0G_Builders)
+We welcome contributions from the community!
+
+### How to Contribute
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+### Development Guidelines
+
+- Follow existing code style
+- Write clear commit messages
+- Add tests for new features
+- Update documentation
+- Ensure all tests pass
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+## 🙏 Acknowledgments
+
+- **0G Labs** for the incredible infrastructure and WaveHack opportunity
+- **0G Compute Network** for decentralized AI capabilities
+- **0G Mainnet** for reliable smart contract deployment
+- **The 0G Community** for support and feedback
+- **Open Source Contributors** who made this possible
+
+---
+
+## 📞 Contact & Links
+
+- **Live Demo:** https://chainsage-app.vercel.app
+- **Smart Contract:** https://chainscan.0g.ai/address/0x65259ad0C0872E9EC83b8fcd0a8541BC7015C0978
+- **GitHub:** https://github.com/Teamerz1111/chainsage-app-v0
+- **Twitter:** [@0G_Builders](https://twitter.com/0G_Builders)
+- **Team:** Teamerz1111
+
+---
+
+**Built with ❤️ on the 0G Network for WaveHack 5th Wave**
+
+*Empowering users with AI-powered blockchain intelligence*
