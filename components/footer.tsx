@@ -141,17 +141,42 @@ export function Footer() {
           </div>
         </div>
 
+        {/* 0G Network Badge */}
+        <div className="mb-8">
+          <a 
+            href="https://0g.ai" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 rounded-lg hover:border-primary/40 transition-all duration-200 group"
+          >
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center group-hover:bg-primary/30 transition-colors">
+                <span className="text-primary font-bold text-sm">0G</span>
+              </div>
+              <div>
+                <div className="text-sm font-semibold text-foreground">Powered by 0G Network</div>
+                <div className="text-xs text-muted-foreground">Decentralized AI & Storage</div>
+              </div>
+            </div>
+            <div className="ml-2 opacity-0 group-hover:opacity-100 transition-opacity">
+              <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+              </svg>
+            </div>
+          </a>
+        </div>
+
         {/* Bottom Bar */}
         <div className="pt-8 border-t border-border/50">
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
             <div className="text-sm text-muted-foreground">
-              © {currentYear} 0g-Sygna. All rights reserved. Built with v0 by Vercel.
+              © {currentYear} 0g-Sygna. All rights reserved.
             </div>
             <div className="flex items-center space-x-6 text-sm text-muted-foreground">
-              <span>Powered by Ethereum, Polygon, BSC, Arbitrum</span>
+              <span>Built on 0G Mainnet (Chain ID: 16661)</span>
               <div className="flex items-center space-x-2">
-                <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
-                <span>Multi-chain Support</span>
+                <div className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse"></div>
+                <span>Live</span>
               </div>
             </div>
           </div>

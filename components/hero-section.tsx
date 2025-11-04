@@ -141,6 +141,17 @@ export const HeroSection = React.memo(function HeroSection() {
       </div>
 
       <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        {/* 0G Network Badge */}
+        <div className="mb-6 animate-fade-in-up">
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/30 rounded-full backdrop-blur-sm">
+            <div className="w-6 h-6 bg-primary/20 rounded-full flex items-center justify-center">
+              <span className="text-primary font-bold text-xs">0G</span>
+            </div>
+            <span className="text-sm font-medium text-primary">Powered by 0G Network</span>
+            <div className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse"></div>
+          </div>
+        </div>
+
         {/* Main Headline */}
         <div className="mb-8">
           <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold font-serif mb-6 leading-tight">
@@ -151,8 +162,8 @@ export const HeroSection = React.memo(function HeroSection() {
             <span className="text-secondary neon-text animate-pulse delay-500">Intelligence</span>
           </h1>
           <p className="text-xl sm:text-2xl text-muted-foreground max-w-2xl mx-auto leading-relaxed animate-fade-in-up">
-            Monitor blockchain activity with advanced risk detection, real-time transaction feeds, and comprehensive
-            watchlist management.
+            Monitor blockchain activity with AI-powered risk detection, real-time transaction feeds, and comprehensive
+            watchlist management on 0G Mainnet.
           </p>
         </div>
 
