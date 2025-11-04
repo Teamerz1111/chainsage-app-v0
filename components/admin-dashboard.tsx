@@ -55,7 +55,7 @@ import {
   GitBranch,
   Hash,
   ExternalLink,
-} from "lucide-react"
+} from "@/lib/icons"
 import { WatchlistManagement } from "@/components/watchlist-management"
 import Link from "next/link"
 import { useState, useEffect } from "react"
@@ -63,7 +63,7 @@ import { ChatPrompt } from "@/lib/0g-compute"
 import { wsService } from "@/lib/websocket"
 import { cn } from "@/lib/utils"
 
-export function AdminDashboard() {
+export const AdminDashboard = React.memo(function AdminDashboard() {
   const { address } = useWallet()
   const [activeSection, setActiveSection] = useState("overview")
   const [isChatboxOpen, setIsChatboxOpen] = useState(false)
@@ -2052,4 +2052,4 @@ export function AdminDashboard() {
       </div>
     </div>
   )
-}
+})
