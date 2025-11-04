@@ -1,16 +1,41 @@
-# 0g-Sygna App
+# 0g-Sygna - AI-Powered Blockchain Intelligence
 
-0g-Sygna is a real-time blockchain monitoring and risk detection application that provides comprehensive on-chain intelligence. Built on top of the 0g decentralized storage network for secure and scalable data management, it monitors blockchain activity with advanced risk detection, real-time transaction feeds, and watchlist management across multiple chains.
+> Real-time blockchain monitoring meets AI-powered risk detection on the 0G Network
 
-## Features
+0g-Sygna is your intelligent companion for navigating the blockchain. We've built a platform that watches the chain 24/7, analyzing transactions in real-time and alerting you to potential risks before they become problems. Think of it as having a security analyst working around the clock, powered by 0G's decentralized AI infrastructure.
 
-- **Real-Time Monitoring** - Live blockchain transaction tracking and analysis
-- **Risk Detection** - AI-powered risk scoring and pattern detection
-- **Activity Feed** - Real-time transaction and activity monitoring
-- **Watchlist Management** - Track specific wallet addresses and contracts
-- **Multi-Chain Support** - Support for Ethereum, Polygon, BSC, and other networks
-- **Admin Dashboard** - Comprehensive management interface
-- **Risk Feed** - Categorized risk alerts and notifications
+**🔗 Live Demo:** https://chainsage-app.vercel.app
+
+**📺 5-Minute Demo Video:** [Coming Soon]
+
+**🐦 Twitter Thread:** [Link to @0G_Builders tagged thread]
+
+## What Makes 0g-Sygna Different?
+
+### 🎯 Our Unique Approach
+Most blockchain explorers just show you data. We analyze it. Using 0G Compute Network's decentralized AI, we process every transaction through advanced risk models to give you actionable insights, not just numbers.
+
+### ✨ Key Features
+
+**🔍 Smart Monitoring**
+- Watch any wallet address in real-time
+- Get instant alerts when something unusual happens
+- Track transaction patterns and volumes
+
+**🤖 AI-Powered Risk Analysis**
+- Automatic risk scoring using 0G Compute Network
+- Pattern detection for suspicious activity
+- Natural language explanations of what's happening
+
+**📊 Beautiful Dashboard**
+- Clean, intuitive interface (no blockchain expertise needed)
+- Real-time activity feed with AI insights
+- Customizable watchlists for addresses you care about
+
+**🔐 Built on 0G Infrastructure**
+- Decentralized AI via 0G Compute Network
+- Secure, wallet-based authentication
+- No API keys or rate limits to worry about
 
 ## Tech Stack
 
@@ -30,51 +55,44 @@
 - **Backend API**: See [backend](https://github.com/Teamerz1111/backend)
 - **Architecture**: Decentralized data management with secure blockchain integration
 
-## Setup
+## 🚀 Live Deployment
 
-### Prerequisites
+### Production URLs
+- **Frontend:** https://chainsage-app.vercel.app
+- **Backend API:** https://backend-3o2x.onrender.com
+- **Network:** 0G Mainnet (Chain ID: 16661)
 
-- Node.js 18+ or Bun
-- Git
-- 0g backend service (see https://github.com/Teamerz1111/backend for setup instructions)
+### Quick Start (For Users)
+1. Visit https://chainsage-app.vercel.app
+2. Connect your MetaMask wallet
+3. Start monitoring wallets immediately - no setup needed!
 
-### Installation
+## 🛠️ Local Development Setup
 
-1. Clone the repository:
+Want to run it locally or contribute? Here's how:
+
+### What You'll Need
+- Node.js 18 or higher
+- A MetaMask wallet with some 0G tokens for AI features
+- Git (obviously)
+
+### Getting Started
 
 ```bash
-git clone git@github.com:Teamerz1111/chainsage-app-v0.git
+# Clone the repo
+git clone https://github.com/Teamerz1111/chainsage-app-v0.git
 cd chainsage-app-v0
-```
 
-2. Install dependencies:
-
-```bash
+# Install dependencies
 npm install
-# or
-bun install
-```
 
-3. Set up the backend service:
-
-See https://github.com/Teamerz1111/backend
-
-4. Set up environment variables:
-
-```bash
-cp .env.local.example .env.local
-# Configure API endpoints to connect to your 0g backend service
-```
-
-5. Start the development server:
-
-```bash
+# Start the dev server
 npm run dev
-# or
-bun dev
+
+# Open http://localhost:3000
 ```
 
-6. Open [http://localhost:3000](http://localhost:3000) in your browser.
+That's it! The app will connect to our production backend automatically. If you want to run your own backend, check out the [backend repo](https://github.com/Teamerz1111/backend).
 
 ### Available Scripts
 
@@ -127,78 +145,93 @@ Built with Radix UI primitives and custom styling:
 - Custom theming with dark/light mode support
 - Matrix-style animations and cyberpunk aesthetic
 
-## Environment Variables
+## ⚙️ Configuration
 
-Create a `.env.local` file with the following variables:
+### Environment Variables (Optional)
+
+The app works out of the box with our production backend, but you can customize it:
 
 ```env
-# Backend API Configuration (optional - for non-AI endpoints)
-NEXT_PUBLIC_API_URL=http://localhost:8000  # 0g backend service URL
-NEXT_PUBLIC_WS_URL=ws://localhost:8080     # WebSocket endpoint for real-time updates
-
-# 0G Compute Integration
-# No private keys required! The app uses your connected MetaMask wallet for authentication.
-# Simply connect your wallet and the 0G Compute service will initialize automatically.
+# Only needed if running your own backend
+NEXT_PUBLIC_API_URL=https://your-backend.com
+NEXT_PUBLIC_WS_URL=wss://your-backend.com
 ```
 
-## 0G Compute Integration
+### 0G Compute Setup
 
-The app now uses **0G Compute Network** for AI services instead of traditional APIs:
+No configuration needed! Just connect your wallet and the app handles everything:
+- Wallet-based authentication (no API keys)
+- Automatic 0G Compute initialization
+- Pay-as-you-go AI analysis
 
-### ✅ **No Private Keys Required**
+You'll need about 0.1 0G tokens in your wallet for AI features.
 
-- **Wallet-based authentication** using MetaMask
-- **Secure connection** through your existing wallet
-- **No environment variables** needed for AI services
+## 🧠 How We Use 0G Network
 
-### 🚀 **Setup Process**
+### 0G Compute Network Integration
 
-1. **Connect MetaMask** wallet to the app
-2. **Initialize 0G Compute** service (automatic)
-3. **Fund account** with OG tokens (~0.1 OG for testing)
-4. **Start using AI** features immediately
+This is where the magic happens. Instead of using centralized AI APIs (which are expensive and have rate limits), we tap into 0G's decentralized compute network:
 
-### 🧪 **Testing**
+**What this means for you:**
+- No rate limits - analyze as many transactions as you want
+- Better AI models (Llama 3.3 70B, DeepSeek R1)
+- Transparent pricing - you only pay for what you use
+- Your wallet is your authentication - no API keys to manage
 
-Visit `/test-0g` to test the 0G Compute integration:
+**How it works:**
+1. Connect your MetaMask wallet
+2. The app automatically initializes 0G Compute
+3. When you analyze a transaction, it's processed by decentralized AI nodes
+4. Results come back in seconds with detailed risk analysis
 
-- ✅ Wallet connection status
-- ✅ 0G Compute initialization
-- ✅ Account balance management
-- ✅ AI chat functionality
-- ✅ Risk analysis with AI reasoning
+### Why 0G Mainnet?
 
-### 💡 **Benefits**
+We chose to build on 0G because:
+- **Decentralized AI** - No single point of failure
+- **Cost-effective** - Way cheaper than traditional AI APIs
+- **Scalable** - Can handle high transaction volumes
+- **Secure** - Wallet-based auth means no API keys to leak
 
-- **No rate limiting** - decentralized infrastructure
-- **Enhanced security** - wallet-based authentication
-- **Better AI models** - Llama 3.3 70B, DeepSeek R1
-- **Cost transparency** - pay-per-use pricing
-- **High availability** - multiple provider failover
+### Testing the AI Features
 
-## Deployment
+Want to see the AI in action? Visit `/test-0g` in the app to:
+- Check your 0G Compute connection
+- Test AI chat functionality
+- Run sample risk analyses
+- Monitor your 0G token balance
 
-### Vercel (Recommended)
+## 📦 Deployment Details
 
-1. Connect your repository to Vercel
-2. Configure environment variables in the Vercel dashboard
-3. Deploy automatically on git push
+### Current Production Setup
 
-Or use the Vercel CLI:
+**Frontend (Vercel)**
+- Auto-deploys from main branch
+- Global CDN for fast loading
+- Serverless functions for API routes
+
+**Backend (Render)**
+- Node.js API server
+- WebSocket support for real-time updates
+- Connected to 0G Mainnet
+
+**0G Network Integration**
+- 0G Compute Network (for AI analysis)
+- 0G Mainnet RPC: https://evmrpc.0g.ai
+- Chain ID: 16661
+
+### Deploy Your Own
+
+Want to fork and deploy your own version?
 
 ```bash
-vercel project
-vercel link --yes --project 0g-Sygna-app
-vercel --prod
-```
-
-### Other Platforms
-
-Build the application:
-
-```bash
+# Build for production
 npm run build
-npm run start
+
+# Deploy to Vercel
+vercel --prod
+
+# Or deploy to any Node.js host
+npm start
 ```
 
 ## Architecture
@@ -293,26 +326,80 @@ graph TB
     class RPC,ORACLE,AI external
 ```
 
-## Testing
+## 🧪 Testing & Usage
 
-The project includes sample wallet addresses for testing in `SAMPLE.md`. These are publicly documented exchange hot wallets that exhibit high-volume transaction patterns suitable for testing the monitoring system.
+### Try It Out
 
-### Backend Integration
+1. **Visit the live app:** https://chainsage-app.vercel.app
+2. **Connect your wallet** (MetaMask recommended)
+3. **Search for any Ethereum address** to see its activity
+4. **Add addresses to your watchlist** for continuous monitoring
+5. **Check the admin dashboard** to manage your watchlists
 
-Ensure the 0g backend service is running before testing:
+### Sample Addresses for Testing
 
-1. Follow setup instructions in https://github.com/Teamerz1111/backend
-2. Verify the backend is accessible at the configured API endpoints
-3. Test real-time features require WebSocket connectivity
+Want to see the AI in action? Try monitoring these high-activity wallets:
+- Binance Hot Wallet: `0x28C6c06298d514Db089934071355E5743bf21d60`
+- Coinbase: `0x71660c4005BA85c37ccec55d0C4493E66Fe775d3`
 
-## License
+These addresses have lots of transactions, so you'll see the risk analysis working in real-time.
 
-This project is licensed under the terms specified in the LICENSE file.
+### What to Look For
 
-## Contributing
+- **Activity Feed:** Real-time transaction updates
+- **Risk Scores:** AI-generated risk levels (low/medium/high/critical)
+- **Anomaly Detection:** Unusual patterns highlighted automatically
+- **Real-time Alerts:** WebSocket notifications for watchlist activity
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+## 🗺️ Roadmap
+
+### What's Next for 0g-Sygna
+
+We're just getting started. Here's what we're planning:
+
+**Short-term (Next 2-3 months)**
+- [ ] Multi-chain support (Polygon, BSC, Arbitrum)
+- [ ] Advanced risk models with historical pattern analysis
+- [ ] Email/Telegram notifications for watchlist alerts
+- [ ] Portfolio tracking and analytics
+
+**Medium-term (3-6 months)**
+- [ ] 0G Storage integration for historical data
+- [ ] Smart contract risk analysis
+- [ ] DeFi protocol monitoring
+- [ ] Mobile app (React Native)
+
+**Long-term (6+ months)**
+- [ ] Community-driven risk models
+- [ ] API for developers
+- [ ] Browser extension
+- [ ] Integration with popular wallets
+
+## 🤝 Contributing
+
+We'd love your help making 0g-Sygna better! Here's how:
+
+1. Fork the repo
+2. Create a feature branch (`git checkout -b cool-new-feature`)
+3. Make your changes
+4. Test thoroughly
+5. Submit a pull request
+
+Found a bug? Open an issue and we'll jump on it.
+
+## 📄 License
+
+MIT License - feel free to use this project however you'd like!
+
+## 🙏 Acknowledgments
+
+- Built for the 0G WaveHack 5th Wave
+- Powered by 0G Compute Network
+- Thanks to the 0G team for their support
+- Shoutout to the blockchain dev community
+
+---
+
+**Built with ❤️ on the 0G Network**
+
+Questions? Reach out on Twitter [@0G_Builders](https://twitter.com/0G_Builders)
