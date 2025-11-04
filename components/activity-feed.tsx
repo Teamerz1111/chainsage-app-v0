@@ -27,6 +27,7 @@ interface ActivityItem {
   action?: string
   amountUsd?: number
   dex?: string
+  aiAnalysis?: string | null
 }
 
 const mockActivityData: ActivityItem[] = [
@@ -117,6 +118,8 @@ export function ActivityFeed() {
 
         // Fetch real blockchain data using ethers.js
         const { ethers } = await import('ethers')
+        const { zgComputeService } = await import('@/lib/0g-compute')
+        
         const provider = new ethers.JsonRpcProvider('https://eth-mainnet.g.alchemy.com/v2/demo')
         
         // Get latest block
@@ -133,6 +136,39 @@ export function ActivityFeed() {
               const valueEth = parseFloat(ethers.formatEther(tx.value || 0))
               const valueUsd = valueEth * 2400 // Rough ETH price
               
+              // Try to get AI analysis for high-value transactions
+              let aiAnalysis = null
+              if (valueUsd > 1000) {
+                try {
+                  const analysisResult = await zgComputeService.analyzeTransaction({
+                    transactionData: {
+                      hash: tx.hash,
+                      from: tx.from,
+                      to: tx.to || "Contract Creation",
+                      value: valueEth.toString(),
+                      timestamp: Date.now(),
+                      blockNumber: tx.blockNumber || undefined
+                    },
+                    context: {
+                      riskFactors: {
+                        transactionVolume: valueUsd,
+                        frequencyScore: 0.5,
+                        contractRisk: tx.to ? 0.3 : 0.7,
+                        networkReputation: 0.8,
+                        walletAge: 0.5,
+                        behaviorPattern: 0.5
+                      }
+                    }
+                  })
+                  
+                  if (analysisResult.success) {
+                    aiAnalysis = analysisResult.data
+                  }
+                } catch (aiError) {
+                  console.log('AI analysis skipped:', aiError)
+                }
+              }
+              
               return {
                 id: tx.hash,
                 type: "transaction" as ActivityType,
@@ -142,6 +178,7 @@ export function ActivityFeed() {
                 valueUsd: valueUsd,
                 time: "just now",
                 chain: "ethereum",
+                aiAnalysis: aiAnalysis
               }
             } catch {
               return null
@@ -155,15 +192,15 @@ export function ActivityFeed() {
             setError(null)
           } else {
             setActivities(mockActivityData)
-            setError('Using demo data')
+            setError('Connect wallet for AI-powered analysis')
           }
         } else {
           setActivities(mockActivityData)
-          setError('Using demo data')
+          setError('Connect wallet for AI-powered analysis')
         }
       } catch (err) {
         console.error('Failed to load real blockchain data:', err)
-        setError('Using demo data')
+        setError('Connect wallet for AI-powered analysis')
         setActivities(mockActivityData)
       } finally {
         setLoading(false)
