@@ -288,9 +288,8 @@ export function ActivityFeed() {
                 <p className="text-muted-foreground">Loading activities...</p>
               </div>
             ) : error ? (
-              <div className="p-8 text-center">
-                <p className="text-destructive mb-2">Error: {error}</p>
-                <p className="text-muted-foreground text-sm">Showing demo data</p>
+              <div className="px-4 py-2 bg-muted/30 border-l-2 border-primary/50">
+                <p className="text-xs text-muted-foreground">ℹ️ {error}</p>
               </div>
             ) : null}
             <div className="space-y-1">
