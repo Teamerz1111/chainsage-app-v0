@@ -1,12 +1,13 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import React, { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { WalletButton } from "@/components/wallet-button"
 import { useWallet } from "@/contexts/wallet-context"
-import { Search, Activity, AlertTriangle, HelpCircle, Settings, Menu, X } from "lucide-react"
+import { Search, Activity, AlertTriangle, Settings } from "@/lib/icons"
+import { HelpCircle, Menu, X } from "lucide-react"
 import Link from "next/link"
 
 const navItems = [
@@ -17,7 +18,7 @@ const navItems = [
   { id: "how-it-works", label: "How It Works", icon: HelpCircle },
 ]
 
-export function Navbar() {
+export const Navbar = React.memo(function Navbar() {
   const [activeSection, setActiveSection] = useState("hero")
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const { isConnected } = useWallet()
@@ -180,4 +181,4 @@ export function Navbar() {
       </div>
     </nav>
   )
-}
+})
