@@ -115,18 +115,25 @@ export function ActivityFeed() {
         setLoading(true)
         setError(null)
 
+        // Set a timeout for API calls to prevent infinite loading
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('API timeout')), 5000)
+        )
+
         // Get recent activity data from 0G blockchain
-        const result = await apiService.retrieve0GData({
+        const dataPromise = apiService.retrieve0GData({
           type: 'ai_classification',
           limit: 20,
           page: 1
         })
 
+        const result = await Promise.race([dataPromise, timeoutPromise]) as any
+
         if (result.error) {
           setError(result.error)
           // Fallback to mock data on error
           setActivities(mockActivityData)
-        } else if (result.data?.logs) {
+        } else if (result.data?.logs && result.data.logs.length > 0) {
           // Transform backend data to frontend format
           const transformedActivities: ActivityItem[] = result.data.logs.map((log: any, index: number) => ({
             id: log.transactionHash || `activity_${index}`,
@@ -136,7 +143,7 @@ export function ActivityFeed() {
             to: log.originalTransaction?.to,
             valueUsd: log.originalTransaction?.value ? parseFloat(log.originalTransaction.value) / 1e18 * 2000 : Math.random() * 10000, // Rough ETH to USD conversion
             time: log.timestamp ? new Date(log.timestamp).toLocaleString() : "Unknown",
-            chain: "ethereum", // Default to ethereum for now
+            chain: "ethereum", // Default to ethereum for now,
           }))
           setActivities(transformedActivities)
         } else {
@@ -145,7 +152,7 @@ export function ActivityFeed() {
         }
       } catch (err) {
         console.error('Failed to load activities:', err)
-        setError('Failed to load activities')
+        setError('Using demo data - backend unavailable')
         setActivities(mockActivityData)
       } finally {
         setLoading(false)

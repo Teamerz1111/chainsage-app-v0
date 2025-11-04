@@ -199,14 +199,20 @@ export function RiskFeed() {
         setLoading(true)
         setError(null)
 
+        // Set a timeout for API calls to prevent infinite loading
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('API timeout')), 5000)
+        )
+
         // Get alerts from backend
-        const result = await apiService.getAlerts(20)
+        const dataPromise = apiService.getAlerts(20)
+        const result = await Promise.race([dataPromise, timeoutPromise]) as any
 
         if (result.error) {
           setError(result.error)
           // Fallback to mock data on error
           setAlerts(mockRiskData)
-        } else if (result.data?.alerts) {
+        } else if (result.data?.alerts && result.data.alerts.length > 0) {
           // Transform backend alert data to frontend format with intelligent scoring
           const transformedAlerts: RiskAlert[] = result.data.alerts.map((alert: any, index: number) => {
             const classification = alert.classification
