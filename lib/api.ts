@@ -1,5 +1,6 @@
 import { RiskMetadata, RiskFactors } from './risk-scoring'
 import { TransactionAnalysisPrompt, WalletAnalysisPrompt } from './0g-compute'
+import { apiCache } from './api-cache'
 
 // Use HTTP for localhost, HTTPS for production
 const getApiBaseUrl = () => {
@@ -55,6 +56,19 @@ export interface WalletAnalysis {
     dailyVolume: string
     dailyTxCount: number
     avgAmount: string
+    fallbackAnalysis?: boolean
+    reason?: string
+  }
+  walletData?: {
+    dailyTxCount: number
+    dailyVolumeEth: string
+    currentBalanceEth: string
+    totalTransactions: number
+    totalTokenTransfers: number
+  }
+  dataAvailability?: {
+    transactionsAvailable: boolean
+    aiAnalysisUsed: boolean
   }
   timestamp: number
 }
@@ -70,6 +84,24 @@ export interface AlertData {
   timestamp: number
 }
 
+export interface MonitoredWallet {
+  address: string
+  label?: string
+  threshold?: number
+  status?: string
+  alertCount?: number
+  addedAt?: number
+  lastChecked?: number
+  chainId?: string
+  type?: string
+  riskScore?: number
+}
+
+export interface MonitoredWalletsResponse {
+  wallets: MonitoredWallet[]
+  total: number
+}
+
 class ApiService {
   private baseUrl: string
 
@@ -79,8 +111,19 @@ class ApiService {
 
   private async makeRequest<T>(
     endpoint: string,
-    options: RequestInit = {}
+    options: RequestInit = {},
+    cacheTTL?: number // Optional cache TTL in milliseconds
   ): Promise<ApiResponse<T>> {
+    // Only cache GET requests
+    const isGetRequest = !options.method || options.method === 'GET'
+    
+    // Check cache for GET requests
+    if (isGetRequest && cacheTTL !== undefined) {
+      const cached = apiCache.get<T>(endpoint)
+      if (cached) {
+        return { data: cached }
+      }
+    }
     try {
       const response = await fetch(`${this.baseUrl}${endpoint}`, {
         headers: {
@@ -96,6 +139,12 @@ class ApiService {
       }
 
       const data = await response.json()
+      
+      // Cache successful GET responses
+      if (isGetRequest && cacheTTL !== undefined) {
+        apiCache.set(endpoint, data, undefined, cacheTTL)
+      }
+      
       return { data }
     } catch (error) {
       return {
@@ -263,7 +312,20 @@ class ApiService {
             anomalies: analysis.anomalies || [],
             dailyVolume: analysis.dailyVolume || "0",
             dailyTxCount: analysis.dailyTxCount || 0,
-            avgAmount: analysis.avgAmount || "0"
+            avgAmount: analysis.avgAmount || "0",
+            fallbackAnalysis: analysis.fallbackAnalysis || false,
+            reason: analysis.reason
+          },
+          walletData: {
+            dailyTxCount: analysis.dailyTxCount || 0,
+            dailyVolumeEth: analysis.dailyVolume || "0",
+            currentBalanceEth: "0", // Could be enhanced with real balance data
+            totalTransactions: mockTransactionHistory.length,
+            totalTokenTransfers: 0 // Could be enhanced with real token transfer data
+          },
+          dataAvailability: {
+            transactionsAvailable: mockTransactionHistory.length > 0,
+            aiAnalysisUsed: true // We're using 0G Compute AI
           },
           timestamp: Date.now()
         };
@@ -291,18 +353,18 @@ class ApiService {
   }
 
   async getMonitoringStatus() {
-    return this.makeRequest('/api/wallet/status')
+    return this.makeRequest('/api/wallet/status', {}, 30000) // Cache for 30 seconds
   }
 
   async getMonitoredWallets() {
-    return this.makeRequest('/api/wallet/monitored')
+    return this.makeRequest<MonitoredWalletsResponse>('/api/wallet/monitored', {}, 60000) // Cache for 1 minute
   }
 
   async getWalletEvents(limit = 50, eventType?: string, walletAddress?: string) {
     const params = new URLSearchParams({ limit: limit.toString() })
     if (eventType) params.append('eventType', eventType)
     if (walletAddress) params.append('walletAddress', walletAddress)
-    return this.makeRequest(`/api/wallet/events?${params}`)
+    return this.makeRequest(`/api/wallet/events?${params}`, {}, 15000) // Cache for 15 seconds
   }
 
   async syncWalletsTo0G() {
@@ -408,7 +470,7 @@ class ApiService {
   }
 
   async getWalletBalance(address: string) {
-    return this.makeRequest(`/api/wallet/balance/${address}`)
+    return this.makeRequest(`/api/wallet/balance/${address}`, {}, 30000) // Cache for 30 seconds
   }
 }
 
