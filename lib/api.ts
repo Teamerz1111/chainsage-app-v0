@@ -13,8 +13,8 @@ const getApiBaseUrl = () => {
     return 'http://localhost:3001'
   }
   
-  // Production fallback
-  return 'https://chainsage-backend.onrender.com'
+  // Production fallback - deployed backend
+  return 'https://backend-3o2x.onrender.com'
 }
 
 const API_BASE_URL = getApiBaseUrl()

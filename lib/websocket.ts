@@ -1,4 +1,4 @@
-const WS_URL = process.env.NEXT_PUBLIC_WS_URL || 'wss://chainsage-backend.onrender.com'
+const WS_URL = process.env.NEXT_PUBLIC_WS_URL || 'wss://backend-3o2x.onrender.com'
 
 export interface WebSocketMessage {
   type: string
