@@ -1,10 +1,24 @@
+import dynamic from 'next/dynamic'
 import { Navbar } from "@/components/navbar"
 import { HeroSection } from "@/components/hero-section"
-import { ActivityFeed } from "@/components/activity-feed"
-import { RiskFeed } from "@/components/risk-feed"
-import { SearchPanel } from "@/components/search-panel"
-import { HowItWorks } from "@/components/how-it-works"
 import { Footer } from "@/components/footer"
+
+// Lazy load heavy components for better initial page load
+const ActivityFeed = dynamic(() => import('@/components/activity-feed').then(mod => ({ default: mod.ActivityFeed })), {
+  loading: () => <div className="flex justify-center py-20"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>
+})
+
+const RiskFeed = dynamic(() => import('@/components/risk-feed').then(mod => ({ default: mod.RiskFeed })), {
+  loading: () => <div className="flex justify-center py-20"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>
+})
+
+const SearchPanel = dynamic(() => import('@/components/search-panel').then(mod => ({ default: mod.SearchPanel })), {
+  loading: () => <div className="flex justify-center py-20"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>
+})
+
+const HowItWorks = dynamic(() => import('@/components/how-it-works').then(mod => ({ default: mod.HowItWorks })), {
+  loading: () => <div className="flex justify-center py-20"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>
+})
 
 export default function Home() {
   return (
