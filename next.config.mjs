@@ -6,7 +6,7 @@ const nextConfig = {
   compress: true,
   
   // Build optimizations
-  swcMinify: true,
+  // swcMinify is now default in Next.js 15, removed deprecated option
   
   eslint: {
     ignoreDuringBuilds: true,
