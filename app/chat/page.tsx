@@ -1,5 +1,10 @@
-import { ZGComputeIntegration } from "@/components/zg-compute-integration"
+import dynamic from 'next/dynamic'
 import { WalletProvider } from "@/contexts/wallet-context"
+
+const ZGComputeIntegration = dynamic(() => import('@/components/zg-compute-integration').then(mod => ({ default: mod.ZGComputeIntegration })), {
+  loading: () => <div className="flex items-center justify-center min-h-screen"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>,
+  ssr: false
+})
 
 export default function TestPage() {
     return (
