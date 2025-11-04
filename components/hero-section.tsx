@@ -1,11 +1,11 @@
 "use client"
 
+import React, { useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { ArrowRight, Shield, Zap } from "lucide-react"
-import { useEffect, useRef } from "react"
 import Link from "next/link"
 
-export function HeroSection() {
+export const HeroSection = React.memo(function HeroSection() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {
@@ -202,4 +202,4 @@ export function HeroSection() {
       </div>
     </section>
   )
-}
+})
